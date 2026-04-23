@@ -83,7 +83,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
   <button onclick="goTab(6)">Relatórios</button>
   <button onclick="goTab(7)">Estoque</button>
   <button onclick="goTab(8)">📊 Dashboard</button>
-  <button onclick="goTab(9)" id="navVinc" style="display:none">🔗 Vínculos</button>
+  <button onclick="goTab(9)" id="navVinc">🔗 Vínculos</button>
 </nav>
 <main>
 
@@ -3587,45 +3587,48 @@ setTimeout(importarPedidosPDF, 300);
 
 /* ===== VÍNCULOS ===== */
 function renderVinculos(){
-  // Encontrar todos os itens dos pedidos que têm pid vazio ou pid que não existe no cadastro
-  const semVinculo={};// nome_no_pedido -> {nome, pids_dos_pedidos:[]}
+  // Mostrar TODOS os itens únicos de todos os pedidos para vinculação manual
+  const todosItens={};
   db.pedidos.forEach(p=>{
     (p.itens||[]).forEach(it=>{
-      const prodExiste=it.pid&&db.produtos.find(x=>x.id===it.pid);
-      if(!prodExiste){
-        if(!semVinculo[it.nome])semVinculo[it.nome]={nome:it.nome,count:0,peds:new Set()};
-        semVinculo[it.nome].count++;
-        semVinculo[it.nome].peds.add(p.id);
-      }
+      const nome=it.nome||'';
+      if(!todosItens[nome])todosItens[nome]={nome,pid:it.pid||'',count:0,peds:new Set()};
+      todosItens[nome].count++;
+      todosItens[nome].peds.add(p.id);
     });
   });
 
   const navBtn=document.getElementById('navVinc');
-  const total=Object.keys(semVinculo).length;
-  if(navBtn)navBtn.style.display=total>0?'inline-block':'none';
+  if(navBtn)navBtn.style.display='inline-block';
 
   const el=document.getElementById('lvinc');
   if(!el)return;
 
-  if(!total){
-    el.innerHTML='<p class="empty">✅ Todos os produtos estão vinculados!</p>';
+  if(!Object.keys(todosItens).length){
+    el.innerHTML='<p class="empty">Nenhum item encontrado nos pedidos.</p>';
     return;
   }
 
   const opts='<option value="">— Selecione o produto —</option>'+
-    [...db.produtos].sort((a,b)=>a.nome.localeCompare(b.nome)).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+    [...db.produtos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt',{sensitivity:'base'}))
+    .map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
 
-  el.innerHTML=Object.values(semVinculo).map((v,i)=>`
-    <div class="item" id="vincrow_${i}">
+  el.innerHTML=Object.values(todosItens).sort((a,b)=>a.nome.localeCompare(b.nome)).map((v,i)=>{
+    const prodExiste=v.pid&&db.produtos.find(x=>x.id===v.pid);
+    const status=prodExiste?'✅':'❌';
+    const cor=prodExiste?'#060':'#c00';
+    const selOpts=opts.replace(`value="${v.pid}"`,`value="${v.pid}" selected`);
+    return `<div class="item">
       <div style="font-size:12px;color:#888;margin-bottom:4px">
         📦 Aparece em <b>${v.peds.size}</b> pedido(s) · <b>${v.count}</b> vez(es)
       </div>
-      <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#c00">❌ ${v.nome}</div>
-      <div style="font-size:11px;color:#888;margin-bottom:4px">Vincular a:</div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:${cor}">${status} ${v.nome}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:4px">Vinculado a:</div>
       <select data-nome="${v.nome.replace(/"/g,'&quot;')}" style="width:100%;font-size:13px;padding:7px 8px;border-radius:8px;border:1px solid #ddd">
-        ${opts}
+        ${selOpts}
       </select>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function salvarVinculos(){
