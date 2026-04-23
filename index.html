@@ -1,0 +1,3692 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão Comercial</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:15px}
+header{background:#fff;border-bottom:1px solid #e0e0e0;padding:12px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{font-size:16px;font-weight:600}
+.sync-area{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dot{width:8px;height:8px;border-radius:50%;background:#aaa;display:inline-block;margin-right:4px}
+.dot.green{background:#0a0}.dot.red{background:#c00}.dot.orange{background:#f90}
+nav{display:flex;overflow-x:auto;background:#fff;border-bottom:1px solid #e0e0e0;-webkit-overflow-scrolling:touch}
+nav button{flex:0 0 auto;padding:10px 13px;font-size:12px;background:none;border:none;border-bottom:3px solid transparent;cursor:pointer;color:#666;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+nav button.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:600}
+main{padding:14px;max-width:720px;margin:0 auto}
+.card{background:#fff;border-radius:12px;border:1px solid #e8e8e8;padding:14px 16px;margin-bottom:12px}
+.card h2{font-size:14px;font-weight:600;margin-bottom:12px;color:#333}
+label{display:block;font-size:11px;color:#666;margin-bottom:3px;margin-top:9px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;background:#fff;color:#1a1a1a;-webkit-appearance:none}
+textarea{resize:vertical;min-height:56px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:inline-block;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;border:1px solid #ccc;background:#fff;color:#1a1a1a;-webkit-tap-highlight-color:transparent}
+.btn-p{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.btn-d{color:#c00;border-color:#fcc}
+.btn-s{color:#060;border-color:#cfc;background:#f5fff5}
+.btn-sm{padding:4px 9px;font-size:11px}
+.brow{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.item{border-bottom:1px solid #f0f0f0;padding:9px 0}
+.item:last-child{border-bottom:none}
+.irow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.iname{font-weight:500;font-size:14px}
+.isub{font-size:11px;color:#888;margin-top:2px}
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.sbox{background:#f5f5f5;border-radius:8px;padding:10px 12px}
+.slbl{font-size:10px;color:#888;margin-bottom:3px}
+.sval{font-size:15px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:5px 4px;color:#888;font-weight:500;border-bottom:1px solid #eee}
+td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
+.empty{color:#aaa;font-size:13px;text-align:center;padding:18px 0}
+.tab{display:none}.tab.active{display:block}
+.frow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+.br{background:#fee;color:#c00}.bg{background:#efe;color:#060}.by{background:#ffe;color:#880}.bgr{background:#f0f0f0;color:#555}
+.drow{display:flex;justify-content:space-between;padding:5px 8px;font-size:13px;border-bottom:1px solid #f5f5f5}
+.drow.dtot{font-weight:600;background:#f5f5f5;border-radius:6px;margin:4px 0;font-size:14px}
+.drow.dsec{font-size:11px;color:#888;padding-top:10px;font-weight:600;letter-spacing:.5px;border-bottom:none}
+.dpos{color:#060}.dneg{color:#c00}
+</style>
+</head>
+<body>
+<header>
+  <h1>📦 Gestão Comercial</h1>
+  <div class="sync-area">
+    <span class="dot" id="sdot"></span><span id="stxt" style="font-size:11px;color:#888">Local</span>
+    <button class="btn btn-sm" onclick="enviarGoogle()">⬆ Enviar</button>
+    <button class="btn btn-sm" onclick="baixarGoogle()">⬇ Baixar</button>
+  </div>
+</header>
+<div id="alertaInativos" style="display:none;background:#fff3cd;border-bottom:2px solid #ffc107;padding:10px 16px;cursor:pointer" onclick="goTab(1)">
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:18px">⚠️</span>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:#856404" id="alertaInatTit">Clientes sem comprar há mais de 60 dias</div>
+      <div style="font-size:11px;color:#856404;margin-top:2px" id="alertaInatSub"></div>
+    </div>
+    <span style="margin-left:auto;font-size:11px;color:#856404">Ver clientes →</span>
+  </div>
+</div>
+<nav id="nav">
+  <button class="active" onclick="goTab(0)">Produtos</button>
+  <button onclick="goTab(1)">Clientes</button>
+  <button onclick="goTab(2)">Pedido</button>
+  <button onclick="goTab(3)">Bonif.</button>
+  <button onclick="goTab(4)">Custos</button>
+  <button onclick="goTab(5)">Faturas</button>
+  <button onclick="goTab(6)">Relatórios</button>
+  <button onclick="goTab(7)">Estoque</button>
+  <button onclick="goTab(8)">📊 Dashboard</button>
+  <button onclick="goTab(9)" id="navVinc" style="display:none">🔗 Vínculos</button>
+</nav>
+<main>
+
+<!-- 0 PRODUTOS -->
+<div class="tab active" id="tab0">
+  <div class="card">
+    <h2 id="ptit">Novo Produto</h2>
+    <input type="hidden" id="peid">
+    <label>Nome</label><input type="text" id="pnome" placeholder="Nome do produto">
+    <div class="g2">
+      <div><label>Preço venda (€)</label><input type="number" id="pvenda" step="0.01"></div>
+      <div><label>Preço custo (€)</label><input type="number" id="pcusto" step="0.01"></div>
+      <div><label>Estoque (un)</label><input type="number" id="pestoque"></div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-p" onclick="salvarProd()">Salvar</button>
+      <button class="btn" id="pcancelbtn" style="display:none" onclick="cancelProd()">Cancelar</button>
+    </div>
+  </div>
+  <div class="card"><h2>Produtos</h2><div id="lprod"><p class="empty">Nenhum produto.</p></div></div>
+</div>
+
+<!-- 1 CLIENTES -->
+<div class="tab" id="tab1">
+  <div class="card">
+    <h2 id="ctit">Novo Cliente</h2>
+    <input type="hidden" id="ceid">
+    <label>Nome</label><input type="text" id="cnome" placeholder="Nome completo">
+    <label>Telefone</label><input type="tel" id="ctel" placeholder="+39 000 0000000">
+    <label>Email</label><input type="email" id="cemail">
+    <label>Endereço</label><input type="text" id="cend">
+    <div class="brow">
+      <button class="btn btn-p" onclick="salvarCli()">Salvar</button>
+      <button class="btn" id="ccancelbtn" style="display:none" onclick="cancelCli()">Cancelar</button>
+    </div>
+  </div>
+  <div class="card" id="cardInativos" style="display:none;border:2px solid #ffc107;background:#fffdf0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h2 style="color:#856404;margin:0">⚠️ Inativos há +60 dias</h2>
+      <span id="cntInativos" style="background:#ffc107;color:#856404;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px"></span>
+    </div>
+    <div id="listaInativos"></div>
+  </div>
+  <div class="card"><h2>Clientes</h2><div id="lcli"><p class="empty">Nenhum cliente.</p></div></div>
+</div>
+
+<!-- 2 PEDIDO -->
+<div class="tab" id="tab2">
+  <div class="card">
+    <h2 id="pedtit">Novo Pedido</h2>
+    <input type="hidden" id="pedeid">
+    <div class="g2">
+      <div><label>Cliente</label><select id="pedcli"><option value="">Selecione...</option></select></div>
+      <div><label>Desc. global (%)</label><input type="number" id="peddg" value="0" min="0" max="100" oninput="calcPed()"></div>
+      <div><label>Data do Pedido</label><input type="date" id="peddata"></div>
+      <div><label>Nº Fatura/Ref.</label><input type="text" id="pednum" placeholder="Ex: 38"></div>
+    </div>
+    <label>Adicionar produto</label>
+    <select id="pedprod" onchange="addPedItem(this.value)"><option value="">Selecione...</option></select>
+    <div id="peditens" style="margin-top:12px;overflow-x:auto"></div>
+    <div id="pedtot" style="display:none;margin-top:12px">
+      <div style="background:#f9f9f9;border-radius:8px;padding:12px;font-size:13px;border:1px solid #eee">
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#888">Subtotal s/ IVA</span><span id="psubt">€ 0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#888">Desconto global</span><span id="pdesc" style="color:#c00">- € 0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#888">Base imponível</span><span id="pbase">€ 0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #eee"><span style="color:#888">IVA 22%</span><span id="piva">€ 0</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-weight:700;font-size:15px"><span>Total c/ IVA</span><span id="ptotv">€ 0</span></div>
+      </div>
+      <div class="sgrid" style="margin-top:8px">
+        <div class="sbox"><div class="slbl">Custo total</div><div class="sval" id="ptotc">€ 0</div></div>
+        <div class="sbox"><div class="slbl">Lucro estimado</div><div class="sval" id="ptotl">€ 0</div></div>
+      </div>
+    </div>
+    <label>Observações</label><textarea id="pedobs"></textarea>
+    <div class="brow">
+      <button class="btn btn-p" id="pedsavebtn" onclick="regPedido()">Registrar Pedido</button>
+      <button class="btn" id="pedcancelbtn" style="display:none" onclick="cancelPed()">Cancelar</button>
+      <button class="btn" onclick="limparPed()">Limpar</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Pedidos</h2>
+    <div class="frow" style="margin-bottom:10px;gap:8px">
+      <div style="flex:1;min-width:140px">
+        <label style="margin-top:0">Cliente</label>
+        <select id="filtcli" onchange="renderLPed()" style="font-size:13px">
+          <option value="">Todos os clientes</option>
+        </select>
+      </div>
+      <div style="min-width:110px">
+        <label style="margin-top:0">De</label>
+        <input type="date" id="filtde" onchange="renderLPed()" style="font-size:13px">
+      </div>
+      <div style="min-width:110px">
+        <label style="margin-top:0">Até</label>
+        <input type="date" id="filtat" onchange="renderLPed()" style="font-size:13px">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn btn-sm" onclick="limparFiltros()" style="white-space:nowrap">✕ Limpar</button>
+      </div>
+    </div>
+    <div id="filtinfo" style="font-size:11px;color:#888;margin-bottom:6px"></div>
+    <div id="lped"><p class="empty">Nenhum pedido.</p></div>
+  </div>
+</div>
+
+<!-- 3 BONIFICAÇÕES -->
+<div class="tab" id="tab3">
+  <div class="card">
+    <h2>Nova Bonificação</h2>
+    <label>Cliente</label><select id="boncli"><option value="">Selecione...</option></select>
+    <label>Produto</label><select id="bonprod"><option value="">Selecione...</option></select>
+    <label>Quantidade</label><input type="number" id="bonqty" value="1" min="1">
+    <label>Observação</label><input type="text" id="bonobs">
+    <div class="brow"><button class="btn btn-p" onclick="regBon()">Registrar</button></div>
+  </div>
+  <div class="card"><h2>Histórico</h2><div id="lbon"><p class="empty">Nenhuma bonificação.</p></div></div>
+</div>
+
+<!-- 4 CUSTOS -->
+<div class="tab" id="tab4">
+  <div class="card">
+    <h2>Novo Custo</h2>
+    <div class="g2">
+      <div><label>Tipo</label>
+        <select id="custtipo" onchange="updCustCat()">
+          <option value="op">Operacional</option>
+          <option value="fx">Fixo</option>
+        </select>
+      </div>
+      <div><label>Categoria</label><select id="custcat"></select></div>
+      <div><label>Valor (€)</label><input type="number" id="custval" step="0.01"></div>
+      <div><label>Data</label><input type="date" id="custdata"></div>
+    </div>
+    <label>Descrição</label><input type="text" id="custdesc">
+    <div class="brow"><button class="btn btn-p" onclick="salvarCusto()">Registrar</button></div>
+  </div>
+  <div class="card"><h2>Custos Operacionais</h2><div id="lcustop"><p class="empty">Nenhum.</p></div></div>
+  <div class="card"><h2>Custos Fixos</h2><div id="lcustfx"><p class="empty">Nenhum.</p></div></div>
+</div>
+
+<!-- 5 FATURAS -->
+<div class="tab" id="tab5">
+  <div class="card">
+    <h2>Nova Fatura</h2>
+    <div class="g2">
+      <div><label>Fornecedor</label><input type="text" id="fatforn"></div>
+      <div><label>Valor (€)</label><input type="number" id="fatval" step="0.01"></div>
+      <div><label>Vencimento</label><input type="date" id="fatvenc"></div>
+      <div><label>Categoria</label>
+        <select id="fatcat">
+          <option>Fornecedor</option><option>Aluguel</option><option>Contador</option>
+          <option>Luz</option><option>Gás</option><option>Água</option><option>Outro</option>
+        </select>
+      </div>
+    </div>
+    <label>Descrição</label><input type="text" id="fatdesc">
+    <div class="brow"><button class="btn btn-p" onclick="salvarFat()">Adicionar</button></div>
+  </div>
+  <div class="card"><h2>A Pagar</h2><div id="lfatpend"><p class="empty">Nenhuma fatura pendente. ✅</p></div></div>
+  <div class="card"><h2>Pagas</h2><div id="lfatpag"><p class="empty">Nenhuma paga.</p></div></div>
+</div>
+
+<!-- 6 RELATÓRIOS -->
+<div class="tab" id="tab6">
+  <div class="card">
+    <div class="frow">
+      <select id="relper" onchange="onPerChange()">
+        <option value="mes">Mês atual</option>
+        <option value="ano">Ano atual</option>
+        <option value="custom">Período personalizado</option>
+        <option value="todos">Todos</option>
+      </select>
+      <select id="relcli" onchange="renderRel()"><option value="">Todos clientes</option></select>
+    </div>
+    <div id="relcustom" style="display:none" class="g2">
+      <div><label>De</label><input type="date" id="relde" onchange="renderRel()"></div>
+      <div><label>Até</label><input type="date" id="relate" onchange="renderRel()"></div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-p" onclick="expPDF()">Exportar PDF</button>
+      <button class="btn" onclick="expDRE()">Exportar DRE</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Resumo</h2>
+    <div class="sgrid">
+      <div class="sbox"><div class="slbl">Receita bruta</div><div class="sval" id="rbruta">€ 0</div></div>
+      <div class="sbox"><div class="slbl">Custo</div><div class="sval" id="rcusto">€ 0</div></div>
+      <div class="sbox"><div class="slbl">Lucro bruto</div><div class="sval" id="rlucro">€ 0</div></div>
+    </div>
+  </div>
+  <div class="card"><h2>DRE</h2><div id="rdre"></div></div>
+  <div class="card"><h2>Produtos mais vendidos</h2><div id="rprod"><p class="empty">Sem dados.</p></div></div>
+  <div class="card"><h2>Pedidos</h2><div id="rped"><p class="empty">Sem pedidos.</p></div></div>
+  <div class="card"><h2>Por Cliente</h2><div id="rcli"><p class="empty">Sem dados.</p></div></div>
+</div>
+
+<!-- 7 ESTOQUE -->
+<div class="tab" id="tab7">
+  <div class="card">
+    <h2>Relatório de Estoque</h2>
+    <div class="sgrid">
+      <div class="sbox"><div class="slbl">Total itens</div><div class="sval" id="estqtd">0</div></div>
+      <div class="sbox"><div class="slbl">Valor custo</div><div class="sval" id="estcusto">€ 0</div></div>
+      <div class="sbox"><div class="slbl">Valor venda</div><div class="sval" id="estvenda">€ 0</div></div>
+    </div>
+    <div class="brow" style="margin-bottom:12px">
+      <button class="btn btn-p" onclick="expEstoque()">Exportar PDF</button>
+    </div>
+    <div id="restoque"><p class="empty">Sem produtos.</p></div>
+  </div>
+</div>
+
+<!-- 8 DASHBOARD -->
+<div class="tab" id="tab8">
+  <div class="card">
+    <h2>📊 Dashboard de Vendas</h2>
+    <div class="frow" style="gap:8px;margin-bottom:4px;flex-wrap:wrap">
+      <select id="dashper" onchange="onDashPerChange()" style="font-size:13px">
+        <option value="mes">Mês atual</option>
+        <option value="ano">Ano atual</option>
+        <option value="custom">Período personalizado</option>
+        <option value="todos">Todos</option>
+      </select>
+    </div>
+    <div id="dashcustom" style="display:none" class="g2">
+      <div><label>De</label><input type="date" id="dashde" onchange="renderDash()"></div>
+      <div><label>Até</label><input type="date" id="dashat" onchange="renderDash()"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:14px">🍕 Produtos mais vendidos</h2>
+    <div id="chartProd"></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:14px">👥 Vendas por Cliente</h2>
+    <div id="chartCli"></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-bottom:14px">🗺️ Vendas por Região</h2>
+    <div id="chartReg"></div>
+  </div>
+</div>
+
+<!-- 9 VÍNCULOS DE PRODUTOS -->
+<div class="tab" id="tab9">
+  <div class="card">
+    <h2>🔗 Vincular Produtos dos Pedidos</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:10px">Produtos nos pedidos que não estão vinculados ao cadastro. Selecione o produto correspondente para cada um.</p>
+    <div class="brow" style="margin-bottom:12px">
+      <button class="btn btn-p" onclick="salvarVinculos()">✅ Salvar todos os vínculos</button>
+      <button class="btn" onclick="renderVinculos()">🔄 Atualizar</button>
+    </div>
+    <div id="lvinc"><p class="empty">Verificando...</p></div>
+  </div>
+</div>
+
+</main>
+<script>
+const SURL='https://script.google.com/macros/s/AKfycbxIxT71zKJVIzzJtMo34vqGPhqYHrRQoWso18aHgov8MYUbaK5XgV6yhYaOVUc2fOdy8g/exec';
+const IVA=0.22;
+const CK='gestao_v3';
+let db={produtos:[],clientes:[],pedidos:[],bonificacoes:[],custos:[],faturas:[]};
+let pi=[];// pedido itens
+
+function sv(){try{localStorage.setItem(CK,JSON.stringify(db));}catch(e){}}
+function ld(){try{const s=localStorage.getItem(CK);if(s)db=JSON.parse(s);}catch(e){}}
+function fe(v){return'€ '+Number(v||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fd(d){try{return new Date(d).toLocaleDateString('it-IT');}catch(e){return'';}}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function tod(){return new Date().toISOString().slice(0,10);}
+
+function setSS(s){
+  const d=document.getElementById('sdot');
+  const t=document.getElementById('stxt');
+  d.className='dot';
+  if(s==='ok'){d.classList.add('green');t.textContent='Sincronizado ✓';}
+  else if(s==='err'){d.classList.add('red');t.textContent='Erro';}
+  else if(s==='sync'){d.classList.add('orange');t.textContent='Sincronizando...';}
+  else{t.textContent='Local';}
+}
+
+function goTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
+  document.querySelectorAll('#nav button').forEach((b,j)=>b.classList.toggle('active',i===j));
+  if(i===2){fillPedSels();renderLPed();}
+  if(i===3)fillBonSels();
+  if(i===4){document.getElementById('custdata').value=tod();updCustCat();}
+  if(i===5)document.getElementById('fatvenc').value=tod();
+  if(i===6){fillRelCli();renderRel();}
+  if(i===7)renderEst();
+  if(i===8)renderDash();
+  if(i===9)renderVinculos();
+}
+
+function renderAll(){
+  renderProd();renderCli();renderLPed();renderBon();renderCust();renderFat();
+  renderInativos();
+  // Atualiza badge de vínculos pendentes
+  setTimeout(()=>{
+    const semVinculo=db.pedidos.reduce((acc,p)=>{
+      (p.itens||[]).forEach(it=>{if(!it.pid||!db.produtos.find(x=>x.id===it.pid))acc.add(it.nome);});
+      return acc;
+    },new Set());
+    const btn=document.getElementById('navVinc');
+    if(btn)btn.style.display=semVinculo.size>0?'inline-block':'none';
+    if(btn&&semVinculo.size>0)btn.textContent='🔗 Vínculos ('+semVinculo.size+')';
+  },200);
+}
+
+/* ===== DASHBOARD ===== */
+const CORES=['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40','#C9CBCF','#71B37C','#F7464A','#46BFBD','#FDB45C','#949FB1','#4D5360','#AC64AD','#00ADF9'];
+
+function onDashPerChange(){
+  const v=document.getElementById('dashper').value;
+  document.getElementById('dashcustom').style.display=v==='custom'?'grid':'none';
+  renderDash();
+}
+
+function getDashPeds(){
+  const per=document.getElementById('dashper')?document.getElementById('dashper').value:'todos';
+  const hoje=new Date();
+  const de=document.getElementById('dashde')?document.getElementById('dashde').value:'';
+  const at=document.getElementById('dashat')?document.getElementById('dashat').value:'';
+  return db.pedidos.filter(p=>{
+    if(!p.data)return false;
+    const d=new Date(p.data);
+    if(per==='mes')return d.getMonth()===hoje.getMonth()&&d.getFullYear()===hoje.getFullYear();
+    if(per==='ano')return d.getFullYear()===hoje.getFullYear();
+    if(per==='custom'){
+      const ds=p.data.slice(0,10);
+      if(de&&ds<de)return false;
+      if(at&&ds>at)return false;
+      return true;
+    }
+    return true;
+  });
+}
+
+// Mapa completo sigla → região para todas as províncias italianas
+const PROV_REGIAO={
+  // Lombardia
+  MI:'Lombardia',MB:'Lombardia',BG:'Lombardia',BS:'Lombardia',CO:'Lombardia',
+  CR:'Lombardia',LC:'Lombardia',LO:'Lombardia',MN:'Lombardia',PV:'Lombardia',
+  SO:'Lombardia',VA:'Lombardia',
+  // Piemonte
+  TO:'Piemonte',AL:'Piemonte',AT:'Piemonte',BI:'Piemonte',CN:'Piemonte',
+  NO:'Piemonte',VB:'Piemonte',VC:'Piemonte',
+  // Veneto
+  VE:'Veneto',VR:'Veneto',VI:'Veneto',PD:'Veneto',TV:'Veneto',
+  BL:'Veneto',RO:'Veneto',
+  // Liguria
+  GE:'Liguria',IM:'Liguria',SP:'Liguria',SV:'Liguria',
+  // Emilia-Romagna
+  BO:'Emilia-Romagna',FE:'Emilia-Romagna',FC:'Emilia-Romagna',MO:'Emilia-Romagna',
+  PR:'Emilia-Romagna',PC:'Emilia-Romagna',RA:'Emilia-Romagna',RE:'Emilia-Romagna',RN:'Emilia-Romagna',
+  // Toscana
+  FI:'Toscana',AR:'Toscana',GR:'Toscana',LI:'Toscana',LU:'Toscana',
+  MS:'Toscana',PI:'Toscana',PT:'Toscana',PO:'Toscana',SI:'Toscana',
+  // Trentino-Alto Adige
+  TN:'Trentino-Alto Adige',BZ:'Trentino-Alto Adige',
+  // Friuli-Venezia Giulia
+  TS:'Friuli-Venezia Giulia',GO:'Friuli-Venezia Giulia',PN:'Friuli-Venezia Giulia',UD:'Friuli-Venezia Giulia',
+  // Valle d'Aosta
+  AO:"Valle d'Aosta",
+  // Lazio
+  RM:'Lazio',FR:'Lazio',LT:'Lazio',RI:'Lazio',VT:'Lazio',
+  // Campania
+  NA:'Campania',SA:'Campania',CE:'Campania',AV:'Campania',BN:'Campania',
+  // Puglia
+  BA:'Puglia',BT:'Puglia',BR:'Puglia',FG:'Puglia',LE:'Puglia',TA:'Puglia',
+  // Sicilia
+  PA:'Sicilia',AG:'Sicilia',CL:'Sicilia',CT:'Sicilia',EN:'Sicilia',
+  ME:'Sicilia',RG:'Sicilia',SR:'Sicilia',TP:'Sicilia',
+  // Sardegna
+  CA:'Sardegna',CI:'Sardegna',MD:'Sardegna',NU:'Sardegna',OG:'Sardegna',
+  OR:'Sardegna',OT:'Sardegna',SS:'Sardegna',VS:'Sardegna',
+  // Calabria
+  CZ:'Calabria',CS:'Calabria',KR:'Calabria',RC:'Calabria',VV:'Calabria',
+  // Basilicata
+  MT:'Basilicata',PZ:'Basilicata',
+  // Molise
+  CB:'Molise',IS:'Molise',
+  // Abruzzo
+  AQ:'Abruzzo',CH:'Abruzzo',PE:'Abruzzo',TE:'Abruzzo',
+  // Umbria
+  PG:'Umbria',TR:'Umbria',
+  // Marche
+  AN:'Marche',AP:'Marche',FM:'Marche',MC:'Marche',PU:'Marche',
+};
+
+function extrairRegiao(endereco){
+  if(!endereco)return 'Sem região';
+  const end=(endereco||'').toUpperCase().trim();
+  // Tenta detectar a sigla da província — padrão: "CIDADE SIG" ou "CEP SIG ITALIA"
+  // Ex: "20156 MILANO MI ITALIA" → pega "MI"
+  const tokens=end.replace(/[,]/g,' ').split(/\s+/);
+  for(let i=tokens.length-1;i>=0;i--){
+    const t=tokens[i].replace(/[^A-Z]/g,'');
+    if(t.length===2&&PROV_REGIAO[t])return PROV_REGIAO[t];
+  }
+  // Fallback: busca por nome de cidade conhecida
+  const cidades={
+    'MILANO':'Lombardia','BERGAMO':'Lombardia','BRESCIA':'Lombardia','MANTOVA':'Lombardia',
+    'TORINO':'Piemonte','BIELLA':'Piemonte',
+    'VENEZIA':'Veneto','VERONA':'Veneto','TREVISO':'Veneto','PADOVA':'Veneto',
+    'GENOVA':'Liguria','BOLOGNA':'Emilia-Romagna','PARMA':'Emilia-Romagna',
+    'FIRENZE':'Toscana','LUCCA':'Toscana','PISA':'Toscana',
+    'ROMA':'Lazio','NAPOLI':'Campania','TRENTO':'Trentino-Alto Adige','BOLZANO':'Trentino-Alto Adige',
+  };
+  for(const [cidade,reg] of Object.entries(cidades)){
+    if(end.includes(cidade))return reg;
+  }
+  return 'Outras regiões';
+}
+
+// Estado de ordenação por tabela
+const dashSort={prod:{col:null,asc:false},cli:{col:null,asc:false},reg:{col:null,asc:false}};
+// Cache dos dados para reordenar sem recalcular
+const dashDados={prod:[],cli:[],reg:[]};
+
+function pizzaSVG(dados, tipo){
+  const total=dados.reduce((a,d)=>a+(+d.value||0),0);
+  if(!total)return '<p class="empty">Sem dados para o período.</p>';
+
+  // Gráfico pizza simples sem texto dentro
+  const R=100, cx=120, cy=120;
+  let angle=-Math.PI/2, paths='';
+  dados.forEach((d,i)=>{
+    const frac=d.value/total;
+    const a1=angle, a2=angle+frac*2*Math.PI;
+    const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    const x2=cx+R*Math.cos(a2), y2=cy+R*Math.sin(a2);
+    paths+=`<path d="M${cx},${cy} L${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${frac>0.5?1:0},1 ${x2.toFixed(1)},${y2.toFixed(1)} Z" fill="${CORES[i%CORES.length]}" stroke="#fff" stroke-width="2"/>`;
+    angle=a2;
+  });
+  const svg=`<svg viewBox="0 0 240 240" style="width:100%;max-width:220px;display:block;margin:0 auto">${paths}</svg>`;
+
+  return svg + dashTabela(dados, tipo, total);
+}
+
+function dashTabela(dados, tipo, total){
+  if(!total)total=dados.reduce((a,d)=>a+(+d.value||0),0);
+  const s=dashSort[tipo];
+  const col2lbl=tipo==='prod'?'Qtd':'Pedidos';
+
+  // Ícone de seta para colunas ordenáveis
+  function seta(col){
+    if(s.col!==col)return ' <span style="color:#ccc;font-size:10px">⇅</span>';
+    return s.asc?' <span style="color:#1a1a1a;font-size:10px">↑</span>':' <span style="color:#1a1a1a;font-size:10px">↓</span>';
+  }
+  function thSort(col,lbl){
+    return `<th style="text-align:right;padding:5px 4px;cursor:pointer;user-select:none;white-space:nowrap" onclick="sortDash('${tipo}','${col}')">${lbl}${seta(col)}</th>`;
+  }
+
+  // Ordenar dados
+  let sorted=[...dados];
+  if(s.col==='lucro') sorted.sort((a,b)=>s.asc?(a.lucro||0)-(b.lucro||0):(b.lucro||0)-(a.lucro||0));
+  else if(s.col==='pctlucro'){
+    const pct=d=>d.vendaSIva>0?(d.lucro/d.vendaSIva)*100:0;
+    sorted.sort((a,b)=>s.asc?pct(a)-pct(b):pct(b)-pct(a));
+  }
+
+  const rows=sorted.map((d,i)=>{
+    const cor=CORES[dados.indexOf(d)%CORES.length];
+    const vendaSIva=d.vendaSIva||0;
+    const lucro=d.lucro||0;
+    const custo=d.custo||0;
+    const pctLucro=vendaSIva>0?((lucro/vendaSIva)*100).toFixed(1):'—';
+    const col2=tipo==='prod'?(d.qty||0):(d.npeds||0);
+    return `<tr style="border-bottom:1px solid #f5f5f5">
+      <td style="padding:5px 4px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="width:10px;height:10px;border-radius:2px;background:${cor};flex-shrink:0;display:inline-block"></span>
+          <span style="font-size:11px">${d.label}</span>
+        </div>
+      </td>
+      <td style="text-align:center;font-size:12px;padding:5px 4px">${col2}</td>
+      <td style="text-align:right;font-size:12px;padding:5px 4px">${fe(vendaSIva)}</td>
+      <td style="text-align:right;font-size:12px;padding:5px 4px">${fe(custo)}</td>
+      <td style="text-align:right;font-size:12px;padding:5px 4px;color:#060;font-weight:600">${fe(lucro)}</td>
+      <td style="text-align:right;font-size:12px;padding:5px 4px;color:#060">${pctLucro==='—'?'—':pctLucro+'%'}</td>
+    </tr>`;
+  }).join('');
+
+  const totVenda=dados.reduce((a,d)=>a+(d.vendaSIva||0),0);
+  const totCusto=dados.reduce((a,d)=>a+(d.custo||0),0);
+  const totLucro=dados.reduce((a,d)=>a+(d.lucro||0),0);
+  const totPct=totVenda>0?((totLucro/totVenda)*100).toFixed(1)+'%':'—';
+  const totCol2=tipo==='prod'?dados.reduce((a,d)=>a+(d.qty||0),0):dados.reduce((a,d)=>a+(d.npeds||0),0);
+
+  return `<div style="overflow-x:auto;margin-top:14px">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:#f5f5f5;border-bottom:2px solid #e0e0e0">
+        <th style="text-align:left;padding:5px 4px;font-size:12px">Item</th>
+        <th style="text-align:center;padding:5px 4px;font-size:12px">${col2lbl}</th>
+        <th style="text-align:right;padding:5px 4px;font-size:12px">Venda s/IVA</th>
+        <th style="text-align:right;padding:5px 4px;font-size:12px">Custo</th>
+        ${thSort('lucro','Lucro €')}
+        ${thSort('pctlucro','% Lucro')}
+      </tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="background:#f0f0f0;font-weight:700;border-top:2px solid #ddd">
+        <td style="padding:5px 4px;font-size:12px">TOTAL</td>
+        <td style="text-align:center;font-size:12px;padding:5px 4px">${totCol2}</td>
+        <td style="text-align:right;font-size:12px;padding:5px 4px">${fe(totVenda)}</td>
+        <td style="text-align:right;font-size:12px;padding:5px 4px">${fe(totCusto)}</td>
+        <td style="text-align:right;font-size:12px;padding:5px 4px;color:#060">${fe(totLucro)}</td>
+        <td style="text-align:right;font-size:12px;padding:5px 4px;color:#060">${totPct}</td>
+      </tr></tfoot>
+    </table>
+  </div>`;
+}
+
+function sortDash(tipo, col){
+  const s=dashSort[tipo];
+  if(s.col===col) s.asc=!s.asc;
+  else{s.col=col;s.asc=false;}
+  // Redesenha só a tabela, mantendo o gráfico
+  const dados=dashDados[tipo];
+  const total=dados.reduce((a,d)=>a+(+d.value||0),0);
+  const el=document.getElementById('chart'+tipo.charAt(0).toUpperCase()+tipo.slice(1));
+  if(!el)return;
+  // Preserva o SVG e substitui só a tabela
+  const svg=el.querySelector('svg');
+  const svgHtml=svg?svg.outerHTML:'';
+  el.innerHTML=svgHtml+dashTabela(dados,tipo,total);
+}
+
+function renderDash(){
+  const peds=getDashPeds();
+
+  // --- PRODUTOS ---
+  const mapProd={};
+  peds.forEach(p=>(p.itens||[]).forEach(it=>{
+    const k=it.nome||'?';
+    if(!mapProd[k])mapProd[k]={qty:0,vendaSIva:0,custo:0};
+    const sub=(+it.qty||0)*(+it.venda||0)*(1-(+it.dp||0)/100)-(+it.de||0);
+    const cst=(+it.qty||0)*(+it.custo||0);
+    mapProd[k].qty+=(+it.qty||0);
+    mapProd[k].vendaSIva+=sub;
+    mapProd[k].custo+=cst;
+  }));
+  const dadosProd=Object.entries(mapProd)
+    .map(([label,v])=>({label,value:v.vendaSIva,qty:Math.round(v.qty),vendaSIva:v.vendaSIva,custo:v.custo,lucro:v.vendaSIva-v.custo}))
+    .sort((a,b)=>b.value-a.value).slice(0,12);
+  dashDados.prod=dadosProd; dashSort.prod={col:null,asc:false};
+  const elProd=document.getElementById('chartProd');
+  if(elProd)elProd.innerHTML=pizzaSVG(dadosProd,'prod');
+
+  // --- CLIENTES ---
+  const mapCli={};
+  peds.forEach(p=>{
+    const k=p.cnome||'?';
+    if(!mapCli[k])mapCli[k]={npeds:0,vendaSIva:0,custo:0};
+    mapCli[k].npeds++;
+    mapCli[k].vendaSIva+=(+p.base||0); // base = s/ IVA
+    mapCli[k].custo+=(+p.tc||0);
+  });
+  const dadosCli=Object.entries(mapCli)
+    .map(([label,v])=>({label,value:v.vendaSIva,npeds:v.npeds,vendaSIva:v.vendaSIva,custo:v.custo,lucro:v.vendaSIva-v.custo}))
+    .sort((a,b)=>b.value-a.value).slice(0,12);
+  dashDados.cli=dadosCli; dashSort.cli={col:null,asc:false};
+  const elCli=document.getElementById('chartCli');
+  if(elCli)elCli.innerHTML=pizzaSVG(dadosCli,'cli');
+
+  // --- REGIÕES ---
+  const mapReg={};
+  peds.forEach(p=>{
+    const cli=db.clientes.find(c=>c.id===p.cid);
+    const reg=extrairRegiao(cli?cli.end:'');
+    if(!mapReg[reg])mapReg[reg]={npeds:0,vendaSIva:0,custo:0};
+    mapReg[reg].npeds++;
+    mapReg[reg].vendaSIva+=(+p.base||0);
+    mapReg[reg].custo+=(+p.tc||0);
+  });
+  const dadosReg=Object.entries(mapReg)
+    .map(([label,v])=>({label,value:v.vendaSIva,npeds:v.npeds,vendaSIva:v.vendaSIva,custo:v.custo,lucro:v.vendaSIva-v.custo}))
+    .sort((a,b)=>b.value-a.value);
+  dashDados.reg=dadosReg; dashSort.reg={col:null,asc:false};
+  const elReg=document.getElementById('chartReg');
+  if(elReg)elReg.innerHTML=pizzaSVG(dadosReg,'reg');
+}
+
+function renderInativos(){
+  const DIAS=60;
+  const hoje=new Date();
+  const inativos=[];
+  db.clientes.forEach(c=>{
+    const peds=db.pedidos.filter(p=>p.cid===c.id);
+    if(!peds.length){
+      inativos.push({...c,diasSemCompra:null,ultimaCompra:null});
+      return;
+    }
+    const ultima=peds.reduce((a,b)=>new Date(a.data)>new Date(b.data)?a:b);
+    const dias=Math.floor((hoje-new Date(ultima.data))/(1000*60*60*24));
+    if(dias>=DIAS) inativos.push({...c,diasSemCompra:dias,ultimaCompra:ultima.data});
+  });
+  inativos.sort((a,b)=>(b.diasSemCompra||9999)-(a.diasSemCompra||9999));
+
+  const banner=document.getElementById('alertaInativos');
+  const cardIn=document.getElementById('cardInativos');
+  const listaIn=document.getElementById('listaInativos');
+  const cntIn=document.getElementById('cntInativos');
+  const titIn=document.getElementById('alertaInatTit');
+  const subIn=document.getElementById('alertaInatSub');
+
+  if(!inativos.length){
+    if(banner)banner.style.display='none';
+    if(cardIn)cardIn.style.display='none';
+    return;
+  }
+
+  if(banner){
+    banner.style.display='block';
+    titIn.textContent=inativos.length+' cliente(s) sem comprar há mais de '+DIAS+' dias';
+    const nomes=inativos.slice(0,3).map(c=>c.nome).join(', ')+(inativos.length>3?' e mais '+(inativos.length-3)+'...':'');
+    subIn.textContent=nomes;
+  }
+  if(cardIn){
+    cardIn.style.display='block';
+    cntIn.textContent=inativos.length+' cliente(s)';
+    listaIn.innerHTML=inativos.map(c=>`
+      <div class="item">
+        <div class="irow">
+          <div>
+            <div class="iname">${c.nome}</div>
+            <div class="isub">${c.diasSemCompra!==null
+              ? '⏱️ '+c.diasSemCompra+' dias sem comprar · Última: '+fd(c.ultimaCompra)
+              : '🚫 Nunca comprou'}</div>
+          </div>
+          <div style="display:flex;gap:5px;flex-shrink:0">
+            <button class="btn btn-sm btn-s" onclick="novoP('${c.id}')">Novo Pedido</button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function novoP(cid){
+  goTab(2);
+  setTimeout(()=>{
+    document.getElementById('pedcli').value=cid;
+  },100);
+}
+
+/* ===== SYNC ===== */
+async function enviarGoogle(){
+  setSS('sync');
+  try{
+    const map=[['Produtos','produtos'],['Clientes','clientes'],['Pedidos','pedidos'],['Bonificacoes','bonificacoes'],['Custos','custos'],['Faturas','faturas']];
+    for(const[sh,k]of map){
+      const data=[['json'],...db[k].map(x=>[JSON.stringify(x)])];
+      await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',sheet:sh,data})});
+    }
+    setSS('ok');alert('✅ Dados enviados para o Google Sheets!');
+  }catch(e){setSS('err');alert('❌ Erro ao enviar. Verifique a internet.');}
+}
+
+async function baixarGoogle(){
+  setSS('sync');
+  try{
+    const sheets=['Produtos','Clientes','Pedidos','Bonificacoes','Custos','Faturas'];
+    const keys=['produtos','clientes','pedidos','bonificacoes','custos','faturas'];
+    for(let i=0;i<sheets.length;i++){
+      const r=await fetch(SURL+'?action=get&sheet='+sheets[i]);
+      const rows=await r.json();
+      db[keys[i]]=rows&&rows.length>1?rows.slice(1).map(row=>{try{return JSON.parse(row[0]||'{}');}catch{return{};}}):[]; 
+    }
+    sv();setSS('ok');renderAll();alert('✅ Dados baixados do Google Sheets!');
+  }catch(e){setSS('err');alert('❌ Erro ao baixar. Verifique a internet.');}
+}
+
+/* ===== PRODUTOS ===== */
+function salvarProd(){
+  const n=document.getElementById('pnome').value.trim();
+  if(!n)return alert('Informe o nome.');
+  const id=document.getElementById('peid').value||uid();
+  const p={id,nome:n,venda:+document.getElementById('pvenda').value||0,custo:+document.getElementById('pcusto').value||0,estoque:+document.getElementById('pestoque').value||0};
+  const i=db.produtos.findIndex(x=>x.id===id);
+  if(i>=0)db.produtos[i]=p;else db.produtos.push(p);
+  sv();renderProd();cancelProd();
+}
+function cancelProd(){
+  ['pnome','pvenda','pcusto','pestoque'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('peid').value='';
+  document.getElementById('ptit').textContent='Novo Produto';
+  document.getElementById('pcancelbtn').style.display='none';
+}
+function editProd(id){
+  const p=db.produtos.find(x=>x.id===id);if(!p)return;
+  document.getElementById('peid').value=p.id;
+  document.getElementById('pnome').value=p.nome;
+  document.getElementById('pvenda').value=p.venda;
+  document.getElementById('pcusto').value=p.custo;
+  document.getElementById('pestoque').value=p.estoque;
+  document.getElementById('ptit').textContent='Editar Produto';
+  document.getElementById('pcancelbtn').style.display='inline-block';
+  window.scrollTo(0,0);
+}
+function delProd(id){
+  if(!confirm('Excluir produto?'))return;
+  db.produtos=db.produtos.filter(x=>x.id!==id);sv();renderProd();
+}
+function renderProd(){
+  const el=document.getElementById('lprod');
+  if(!db.produtos.length){el.innerHTML='<p class="empty">Nenhum produto.</p>';return;}
+  el.innerHTML=db.produtos.map(p=>`<div class="item"><div class="irow"><div><div class="iname">${p.nome}</div><div class="isub">Venda: ${fe(p.venda)} · Custo: ${fe(p.custo)} · Est: ${p.estoque||0}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm" onclick="editProd('${p.id}')">Editar</button><button class="btn btn-sm btn-d" onclick="delProd('${p.id}')">×</button></div></div></div>`).join('');
+}
+
+/* ===== CLIENTES ===== */
+function salvarCli(){
+  const n=document.getElementById('cnome').value.trim();
+  if(!n)return alert('Informe o nome.');
+  const id=document.getElementById('ceid').value||uid();
+  const c={id,nome:n,tel:document.getElementById('ctel').value,email:document.getElementById('cemail').value,end:document.getElementById('cend').value};
+  const i=db.clientes.findIndex(x=>x.id===id);
+  if(i>=0)db.clientes[i]=c;else db.clientes.push(c);
+  sv();renderCli();cancelCli();
+}
+function cancelCli(){
+  ['cnome','ctel','cemail','cend'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('ceid').value='';
+  document.getElementById('ctit').textContent='Novo Cliente';
+  document.getElementById('ccancelbtn').style.display='none';
+}
+function editCli(id){
+  const c=db.clientes.find(x=>x.id===id);if(!c)return;
+  document.getElementById('ceid').value=c.id;
+  document.getElementById('cnome').value=c.nome;
+  document.getElementById('ctel').value=c.tel||'';
+  document.getElementById('cemail').value=c.email||'';
+  document.getElementById('cend').value=c.end||'';
+  document.getElementById('ctit').textContent='Editar Cliente';
+  document.getElementById('ccancelbtn').style.display='inline-block';
+  window.scrollTo(0,0);
+}
+function delCli(id){
+  if(!confirm('Excluir cliente?'))return;
+  db.clientes=db.clientes.filter(x=>x.id!==id);sv();renderCli();
+}
+function renderCli(){
+  const el=document.getElementById('lcli');
+  if(!db.clientes.length){el.innerHTML='<p class="empty">Nenhum cliente.</p>';return;}
+  el.innerHTML=db.clientes.map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.nome}</div><div class="isub">${c.tel||''}${c.email?' · '+c.email:''}${c.end?' · '+c.end:''}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm" onclick="editCli('${c.id}')">Editar</button><button class="btn btn-sm btn-d" onclick="delCli('${c.id}')">×</button></div></div></div>`).join('');
+}
+
+/* ===== PEDIDO ===== */
+function fillPedSels(){
+  const cliOrdenados=[...db.clientes].sort((a,b)=>a.nome.localeCompare(b.nome,'pt',{sensitivity:'base'}));
+  document.getElementById('pedcli').innerHTML='<option value="">Selecione...</option>'+cliOrdenados.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  const used=pi.map(x=>x.pid);
+  document.getElementById('pedprod').innerHTML='<option value="">Selecione produto...</option>'+db.produtos.filter(p=>!used.includes(p.id)).map(p=>`<option value="${p.id}">${p.nome} — ${fe(p.venda)}</option>`).join('');
+  const fc=document.getElementById('filtcli');
+  if(fc){const sel=fc.value;fc.innerHTML='<option value="">Todos os clientes</option>'+db.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');fc.value=sel;}
+}
+function limparFiltros(){
+  document.getElementById('filtcli').value='';
+  document.getElementById('filtde').value='';
+  document.getElementById('filtat').value='';
+  renderLPed();
+}
+function addPedItem(id){
+  if(!id)return;
+  const p=db.produtos.find(x=>x.id===id);if(!p)return;
+  pi.push({pid:id,nome:p.nome,qty:1,venda:p.venda,custo:p.custo,dp:0,de:0});
+  calcPed();fillPedSels();
+}
+function remPI(i){pi.splice(i,1);calcPed();fillPedSels();}
+function updPI(i,f,v){
+  const n=parseFloat(v);
+  if(v===''||isNaN(n))return; // não recalcula enquanto está digitando
+  pi[i][f]=n;
+  calcPed();
+}
+function calcItem(it){
+  const b=it.qty*it.venda;
+  return{sub:Math.max(0,b-b*(it.dp/100)-(it.de||0)),cost:it.qty*it.custo};
+}
+function calcPed(){
+  let sub=0,tc=0;
+  pi.forEach(it=>{const c=calcItem(it);sub+=c.sub;tc+=c.cost;});
+  const dg=+document.getElementById('peddg').value||0;
+  const dv=sub*(dg/100);
+  const base=sub-dv;
+  const iva=base*IVA;
+  const tv=base+iva;
+  document.getElementById('psubt').textContent=fe(sub);
+  document.getElementById('pdesc').textContent='- '+fe(dv);
+  document.getElementById('pbase').textContent=fe(base);
+  document.getElementById('piva').textContent=fe(iva);
+  document.getElementById('ptotv').textContent=fe(tv);
+  document.getElementById('ptotc').textContent=fe(tc);
+  document.getElementById('ptotl').textContent=fe(tv-tc);
+  document.getElementById('pedtot').style.display=pi.length?'block':'none';
+  renderPedTabela();
+}
+function renderPedTabela(){
+  const el=document.getElementById('peditens');
+  if(!pi.length){el.innerHTML='';return;}
+  el.innerHTML='<table><thead><tr><th>Produto</th><th style="min-width:90px">Qtd</th><th style="min-width:90px">Desc%</th><th style="min-width:100px">Desc€</th><th>Sub</th><th></th></tr></thead><tbody>'+
+    pi.map((it,i)=>`<tr><td>${it.nome}</td><td><input type="text" inputmode="decimal" value="${it.qty}" style="width:80px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'qty',this.value)" onclick="this.select()"></td><td><input type="text" inputmode="decimal" value="${it.dp}" style="width:80px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'dp',this.value)" onclick="this.select()"></td><td><input type="text" inputmode="decimal" value="${it.de||0}" style="width:90px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'de',this.value)" onclick="this.select()"></td><td style="font-size:13px">${fe(calcItem(it).sub)}</td><td><button class="btn btn-sm btn-d" onclick="remPI(${i})">×</button></td></tr>`).join('')+
+    '</tbody></table>';
+}
+function ajustarEstoque(itens, sinal){
+  // sinal = -1 para subtrair (novo pedido), +1 para devolver (editar/excluir)
+  itens.forEach(it=>{
+    const prod=db.produtos.find(p=>p.id===it.pid);
+    if(prod) prod.estoque=Math.max(0,(+prod.estoque||0)+(sinal*(+it.qty||0)));
+  });
+}
+
+function regPedido(){
+  const cid=document.getElementById('pedcli').value;
+  if(!cid)return alert('Selecione um cliente.');
+  if(!pi.length)return alert('Adicione pelo menos um produto.');
+  const cli=db.clientes.find(c=>c.id===cid);
+  let sub=0,tc=0;
+  pi.forEach(it=>{const c=calcItem(it);sub+=c.sub;tc+=c.cost;});
+  const dg=+document.getElementById('peddg').value||0;
+  const base=sub*(1-dg/100);
+  const iva=base*IVA;
+  const tv=base+iva;
+  const eid=document.getElementById('pedeid').value;
+  const dataVal=document.getElementById('peddata').value;
+  const dataISO=dataVal?(new Date(dataVal+'T12:00:00')).toISOString():new Date().toISOString();
+  const numVal=document.getElementById('pednum').value.trim();
+  if(eid){
+    // EDITAR — devolve estoque do pedido antigo, subtrai o novo
+    const idx=db.pedidos.findIndex(x=>x.id===eid);
+    if(idx>=0){
+      ajustarEstoque(db.pedidos[idx].itens, +1); // devolve antigo
+      ajustarEstoque(pi, -1);                     // subtrai novo
+      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,num:numVal||db.pedidos[idx].num||''};
+    }
+    sv();cancelPed();renderLPed();renderEst();
+    alert('✅ Pedido atualizado!');
+  } else {
+    // NOVO pedido — subtrai estoque
+    ajustarEstoque(pi, -1);
+    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base};
+    db.pedidos.push(ped);sv();limparPed();renderLPed();renderEst();
+    alert('✅ Pedido registrado!');
+  }
+}
+function limparPed(){
+  pi=[];
+  document.getElementById('pedcli').value='';
+  document.getElementById('peddg').value=0;
+  document.getElementById('pedobs').value='';
+  document.getElementById('peditens').innerHTML='';
+  document.getElementById('pedtot').style.display='none';
+  document.getElementById('peddata').value=tod();
+  document.getElementById('pednum').value='';
+  document.getElementById('pedeid').value='';
+  document.getElementById('pedtit').textContent='Novo Pedido';
+  document.getElementById('pedsavebtn').textContent='Registrar Pedido';
+  document.getElementById('pedcancelbtn').style.display='none';
+  fillPedSels();
+}
+function cancelPed(){
+  limparPed();
+  window.scrollTo(0,0);
+}
+function editPed(id){
+  const p=db.pedidos.find(x=>x.id===id);if(!p)return;
+  limparPed();
+  document.getElementById('pedeid').value=p.id;
+  document.getElementById('pedcli').value=p.cid;
+  document.getElementById('peddg').value=p.dg||0;
+  document.getElementById('pedobs').value=p.obs||'';
+  document.getElementById('pednum').value=p.num||'';
+  const d=p.data?p.data.slice(0,10):'';
+  document.getElementById('peddata').value=d;
+  document.getElementById('pedtit').textContent='Editar Pedido #'+(p.num||'');
+  document.getElementById('pedsavebtn').textContent='Salvar Alterações';
+  document.getElementById('pedcancelbtn').style.display='inline-block';
+  pi=p.itens.map(it=>({...it}));
+  calcPed();fillPedSels();
+  window.scrollTo(0,0);
+  goTab(2);
+}
+function delPed(id){
+  if(!confirm('Excluir pedido? O estoque será restaurado.'))return;
+  const ped=db.pedidos.find(x=>x.id===id);
+  if(ped)ajustarEstoque(ped.itens, +1); // devolve ao estoque
+  db.pedidos=db.pedidos.filter(x=>x.id!==id);sv();renderLPed();renderEst();
+}
+function expPedPDF(id){
+  const p=db.pedidos.find(x=>x.id===id);if(!p)return;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Pedido</title><style>body{font-family:sans-serif;padding:24px;font-size:13px}h1{font-size:18px;margin-bottom:2px}.sub{color:#888;font-size:12px;margin-bottom:16px}table{width:100%;border-collapse:collapse;margin:14px 0}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid #eee}th{background:#f5f5f5}.tb{border:1px solid #eee;border-radius:8px;padding:12px;max-width:280px;float:right;font-size:13px}.tr{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #f5f5f5}.tf{font-weight:700;font-size:15px;border:none;padding-top:6px}@media print{button{display:none}}</style></head><body>
+  <h1>Pedido de Venda</h1>
+  <div class="sub">Data: ${fd(p.data)} &nbsp;·&nbsp; Cliente: <b>${p.cnome}</b></div>
+  <table><thead><tr><th>Produto</th><th>Qtd</th><th>Preço</th><th>Desc%</th><th>Desc€</th><th>Subtotal</th></tr></thead><tbody>
+  ${p.itens.map(it=>`<tr><td>${it.nome}</td><td>${it.qty}</td><td>${fe(it.venda)}</td><td>${it.dp||0}%</td><td>${fe(it.de||0)}</td><td>${fe(calcItem(it).sub)}</td></tr>`).join('')}
+  </tbody></table>
+  <div class="tb">
+    <div class="tr"><span>Subtotal s/ IVA</span><span>${fe(p.base/(1-(p.dg||0)/100))}</span></div>
+    <div class="tr"><span>Desc. global (${p.dg||0}%)</span><span>- ${fe(p.base/(1-(p.dg||0)/100)*(p.dg||0)/100)}</span></div>
+    <div class="tr"><span>Base imponível</span><span>${fe(p.base)}</span></div>
+    <div class="tr"><span>IVA 22%</span><span>${fe(p.iva)}</span></div>
+    <div class="tr tf"><span>TOTAL</span><span>${fe(p.tv)}</span></div>
+  </div>
+  ${p.obs?`<div style="clear:both;margin-top:20px;font-size:12px;color:#888">Obs: ${p.obs}</div>`:''}
+  <script>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+function renderLPed(){
+  const el=document.getElementById('lped');
+  const fc=document.getElementById('filtcli');
+  const fde=document.getElementById('filtde');
+  const fat=document.getElementById('filtat');
+  const info=document.getElementById('filtinfo');
+  const cid=fc?fc.value:'';
+  const de=fde?fde.value:'';
+  const at=fat?fat.value:'';
+  let peds=[...db.pedidos].reverse();
+  if(cid)peds=peds.filter(p=>p.cid===cid);
+  if(de)peds=peds.filter(p=>p.data&&p.data.slice(0,10)>=de);
+  if(at)peds=peds.filter(p=>p.data&&p.data.slice(0,10)<=at);
+  const total=peds.reduce((a,p)=>a+(+p.tv||0),0);
+  const lucro=peds.reduce((a,p)=>a+(+p.lucro||0),0);
+  if(info){
+    const filtros=[];
+    if(cid&&fc){const opt=fc.options[fc.selectedIndex];if(opt)filtros.push('Cliente: '+opt.text);}
+    if(de)filtros.push('De: '+fd(de+'T00:00:00'));
+    if(at)filtros.push('Até: '+fd(at+'T00:00:00'));
+    info.textContent=peds.length+' pedido(s) encontrado(s)'+(filtros.length?' · '+filtros.join(' · '):'')+(peds.length?' · Total: '+fe(total)+' · Lucro: '+fe(lucro):'');
+  }
+  if(!peds.length){el.innerHTML='<p class="empty">Nenhum pedido encontrado.</p>';return;}
+  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Data</th><th>Cliente</th><th>Total</th><th>Lucro</th><th></th></tr></thead><tbody>'+
+    peds.map(p=>`<tr><td style="color:#aaa;font-size:11px">${p.num||''}</td><td>${fd(p.data)}</td><td>${p.cnome}</td><td>${fe(p.tv)}</td><td>${fe(p.lucro)}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="editPed('${p.id}')">✏️</button> <button class="btn btn-sm" onclick="expPedPDF('${p.id}')">PDF</button> <button class="btn btn-sm btn-d" onclick="delPed('${p.id}')">×</button></td></tr>`).join('')+
+    '</tbody></table></div>';
+}
+
+/* ===== BONIFICAÇÕES ===== */
+function fillBonSels(){
+  document.getElementById('boncli').innerHTML='<option value="">Selecione...</option>'+db.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('bonprod').innerHTML='<option value="">Selecione...</option>'+db.produtos.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+}
+function regBon(){
+  const cid=document.getElementById('boncli').value;
+  const prod=document.getElementById('bonprod').value;
+  if(!cid||!prod)return alert('Selecione cliente e produto.');
+  const cli=db.clientes.find(c=>c.id===cid);
+  db.bonificacoes.push({id:uid(),cid,cnome:cli?.nome||'',produto:prod,qty:+document.getElementById('bonqty').value||1,obs:document.getElementById('bonobs').value,data:new Date().toISOString()});
+  sv();renderBon();
+  document.getElementById('boncli').value='';document.getElementById('bonprod').value='';
+  document.getElementById('bonqty').value=1;document.getElementById('bonobs').value='';
+}
+function delBon(id){
+  if(!confirm('Excluir?'))return;
+  db.bonificacoes=db.bonificacoes.filter(x=>x.id!==id);sv();renderBon();
+}
+function renderBon(){
+  const el=document.getElementById('lbon');
+  if(!db.bonificacoes.length){el.innerHTML='<p class="empty">Nenhuma bonificação.</p>';return;}
+  el.innerHTML=[...db.bonificacoes].reverse().map(b=>`<div class="item"><div class="irow"><div><div class="iname">${b.cnome}</div><div class="isub">${b.produto} × ${b.qty} · ${fd(b.data)}${b.obs?' · '+b.obs:''}</div></div><button class="btn btn-sm btn-d" onclick="delBon('${b.id}')">×</button></div></div>`).join('');
+}
+
+/* ===== CUSTOS ===== */
+const CATS={op:['Viagem','Alimentação'],fx:['Aluguel','Contador','Luz','Gás','Água','Outro']};
+function updCustCat(){
+  const t=document.getElementById('custtipo').value;
+  document.getElementById('custcat').innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join('');
+}
+function salvarCusto(){
+  const val=+document.getElementById('custval').value;
+  if(!val)return alert('Informe o valor.');
+  db.custos.push({id:uid(),tipo:document.getElementById('custtipo').value,cat:document.getElementById('custcat').value,val,data:document.getElementById('custdata').value,desc:document.getElementById('custdesc').value});
+  sv();renderCust();
+  document.getElementById('custval').value='';document.getElementById('custdesc').value='';
+}
+function delCusto(id){
+  if(!confirm('Excluir?'))return;
+  db.custos=db.custos.filter(x=>x.id!==id);sv();renderCust();
+}
+function renderCust(){
+  const op=db.custos.filter(c=>c.tipo==='op');
+  const fx=db.custos.filter(c=>c.tipo==='fx');
+  document.getElementById('lcustop').innerHTML=op.length?[...op].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.cat} — ${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhum.</p>';
+  document.getElementById('lcustfx').innerHTML=fx.length?[...fx].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.cat} — ${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhum.</p>';
+}
+
+/* ===== FATURAS ===== */
+function salvarFat(){
+  const forn=document.getElementById('fatforn').value.trim();
+  const val=+document.getElementById('fatval').value;
+  if(!forn||!val)return alert('Informe fornecedor e valor.');
+  db.faturas.push({id:uid(),forn,val,venc:document.getElementById('fatvenc').value,cat:document.getElementById('fatcat').value,desc:document.getElementById('fatdesc').value,pago:false,dpag:null});
+  sv();renderFat();
+  document.getElementById('fatforn').value='';document.getElementById('fatval').value='';document.getElementById('fatdesc').value='';
+}
+function pagarFat(id){
+  const f=db.faturas.find(x=>x.id===id);if(!f)return;
+  f.pago=true;f.dpag=new Date().toISOString();sv();renderFat();
+}
+function delFat(id){
+  if(!confirm('Excluir?'))return;
+  db.faturas=db.faturas.filter(x=>x.id!==id);sv();renderFat();
+}
+function fatBadge(f){
+  if(f.pago)return'<span class="badge bg">Paga</span>';
+  const h=new Date();h.setHours(0,0,0,0);
+  const v=new Date(f.venc+'T00:00:00');
+  const d=Math.ceil((v-h)/86400000);
+  if(d<0)return`<span class="badge br">Vencida ${Math.abs(d)}d</span>`;
+  if(d<=7)return`<span class="badge by">Vence em ${d}d</span>`;
+  return`<span class="badge bgr">${fd(f.venc)}</span>`;
+}
+function renderFat(){
+  const pend=db.faturas.filter(f=>!f.pago).sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  const pag=db.faturas.filter(f=>f.pago).sort((a,b)=>new Date(b.dpag)-new Date(a.dpag));
+  document.getElementById('lfatpend').innerHTML=pend.length?pend.map(f=>`<div class="item"><div class="irow"><div><div class="iname">${f.forn} — ${fe(f.val)}</div><div class="isub">${f.cat}${f.desc?' · '+f.desc:''}</div><div style="margin-top:3px">${fatBadge(f)}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm btn-s" onclick="pagarFat('${f.id}')">✓ Pago</button><button class="btn btn-sm btn-d" onclick="delFat('${f.id}')">×</button></div></div></div>`).join(''):'<p class="empty">Nenhuma pendente. ✅</p>';
+  document.getElementById('lfatpag').innerHTML=pag.length?pag.map(f=>`<div class="item"><div class="irow"><div><div class="iname">${f.forn} — ${fe(f.val)}</div><div class="isub">${f.cat} · Pago em ${fd(f.dpag)}</div></div><button class="btn btn-sm btn-d" onclick="delFat('${f.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhuma paga.</p>';
+}
+
+/* ===== RELATÓRIOS ===== */
+function fillRelCli(){
+  const el=document.getElementById('relcli');const cur=el.value;
+  el.innerHTML='<option value="">Todos clientes</option>'+db.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  el.value=cur;
+}
+function onPerChange(){
+  document.getElementById('relcustom').style.display=document.getElementById('relper').value==='custom'?'grid':'none';
+  renderRel();
+}
+function getFil(){
+  const per=document.getElementById('relper').value;
+  const now=new Date();
+  return p=>{
+    const d=new Date(p.data||p);
+    if(per==='mes')return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+    if(per==='ano')return d.getFullYear()===now.getFullYear();
+    if(per==='custom'){
+      const de=document.getElementById('relde').value;
+      const ate=document.getElementById('relate').value;
+      if(de&&d<new Date(de))return false;
+      if(ate&&d>new Date(ate+'T23:59:59'))return false;
+      return true;
+    }
+    return true;
+  };
+}
+function renderRel(){
+  const fil=getFil();
+  const cid=document.getElementById('relcli').value;
+  const peds=db.pedidos.filter(p=>fil(p)&&(!cid||p.cid===cid));
+  const custs=db.custos.filter(c=>fil({data:c.data+'T12:00:00'}));
+  const fpag=db.faturas.filter(f=>f.pago&&fil({data:f.dpag}));
+  const rb=peds.reduce((a,p)=>a+p.tv,0);
+  const tc=peds.reduce((a,p)=>a+p.tc,0);
+  document.getElementById('rbruta').textContent=fe(rb);
+  document.getElementById('rcusto').textContent=fe(tc);
+  document.getElementById('rlucro').textContent=fe(rb-tc);
+  const desc=peds.reduce((a,p)=>{let d=0;p.itens.forEach(it=>{const b=it.qty*it.venda;d+=b*(it.dp/100)+(it.de||0);});d+=p.itens.reduce((s,it)=>s+calcItem(it).sub,0)*(p.dg||0)/100;return a+d;},0);
+  const tiva=peds.reduce((a,p)=>a+(p.iva||0),0);
+  const tbase=peds.reduce((a,p)=>a+(p.base||0),0);
+  const lb=tbase-tc;
+  const cop=custs.filter(c=>c.tipo==='op').reduce((a,c)=>a+c.val,0);
+  const cfx=custs.filter(c=>c.tipo==='fx').reduce((a,c)=>a+c.val,0);
+  const lop=lb-cop-cfx;
+  const tfp=fpag.reduce((a,f)=>a+f.val,0);
+  const res=lop-tfp;
+  const dr=(l,v,cls,ind)=>`<div class="drow${cls?' '+cls:''}"><span${ind?' style="padding-left:12px"':''}>${l}</span><span class="${v>=0?'dpos':'dneg'}">${fe(v)}</span></div>`;
+  const ds=l=>`<div class="drow dsec">${l}</div>`;
+  document.getElementById('rdre').innerHTML=
+    ds('RECEITAS')+dr('(+) Receita bruta',rb,'',false)+dr('(-) Descontos',-desc,'',true)+dr('(-) IVA 22%',-tiva,'',true)+dr('(=) Receita líquida',tbase,'dtot',false)+
+    ds('CUSTOS PRODUTOS')+dr('(-) CPV',-tc,'',false)+dr('(=) Lucro bruto',lb,'dtot',false)+
+    ds('CUSTOS OPERACIONAIS')+dr('(-) Viagem + Alimentação',-cop,'',false)+
+    ds('CUSTOS FIXOS')+dr('(-) Aluguel + Contador + Luz + Gás + Água',-cfx,'',false)+dr('(=) Lucro operacional',lop,'dtot',false)+
+    ds('OUTRAS SAÍDAS')+dr('(-) Faturas pagas',-tfp,'',false)+dr('(=) RESULTADO LÍQUIDO',res,'dtot',false);
+  const pm={};
+  peds.forEach(p=>p.itens.forEach(it=>{if(!pm[it.nome])pm[it.nome]={qty:0,v:0,c:0};const ci=calcItem(it);pm[it.nome].qty+=it.qty;pm[it.nome].v+=ci.sub;pm[it.nome].c+=ci.cost;}));
+  const pl=Object.entries(pm).sort((a,b)=>b[1].v-a[1].v);
+  document.getElementById('rprod').innerHTML=pl.length?'<div style="overflow-x:auto"><table><thead><tr><th>Produto</th><th>Qtd</th><th>Venda</th><th>Custo</th><th>Lucro</th></tr></thead><tbody>'+pl.map(([n,v])=>`<tr><td>${n}</td><td>${v.qty}</td><td>${fe(v.v)}</td><td>${fe(v.c)}</td><td>${fe(v.v-v.c)}</td></tr>`).join('')+'</tbody></table></div>':'<p class="empty">Sem dados.</p>';
+  document.getElementById('rped').innerHTML=peds.length?'<div style="overflow-x:auto"><table><thead><tr><th>Data</th><th>Cliente</th><th>Venda</th><th>Lucro</th></tr></thead><tbody>'+[...peds].reverse().map(p=>`<tr><td>${fd(p.data)}</td><td>${p.cnome}</td><td>${fe(p.tv)}</td><td>${fe(p.lucro)}</td></tr>`).join('')+'</tbody></table></div>':'<p class="empty">Sem pedidos.</p>';
+  const cm={};peds.forEach(p=>{if(!cm[p.cnome])cm[p.cnome]={v:0,l:0,q:0};cm[p.cnome].v+=p.tv;cm[p.cnome].l+=p.lucro;cm[p.cnome].q++;});
+  const cl=Object.entries(cm).sort((a,b)=>b[1].v-a[1].v);
+  document.getElementById('rcli').innerHTML=cl.length?'<div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Ped.</th><th>Total</th><th>Lucro</th></tr></thead><tbody>'+cl.map(([n,v])=>`<tr><td>${n}</td><td>${v.q}</td><td>${fe(v.v)}</td><td>${fe(v.l)}</td></tr>`).join('')+'</tbody></table></div>':'<p class="empty">Sem dados.</p>';
+}
+
+function expPDF(){
+  const fil=getFil();const cid=document.getElementById('relcli').value;
+  const peds=db.pedidos.filter(p=>fil(p)&&(!cid||p.cid===cid));
+  const tv=peds.reduce((a,p)=>a+p.tv,0);const tc=peds.reduce((a,p)=>a+p.tc,0);
+  const pm={};peds.forEach(p=>p.itens.forEach(it=>{if(!pm[it.nome])pm[it.nome]={qty:0,v:0,c:0};const ci=calcItem(it);pm[it.nome].qty+=it.qty;pm[it.nome].v+=ci.sub;pm[it.nome].c+=ci.cost;}));
+  const pl=Object.entries(pm).sort((a,b)=>b[1].v-a[1].v);
+  const per=document.getElementById('relper');
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório</title><style>body{font-family:sans-serif;padding:24px;font-size:13px}h1{font-size:18px}h2{font-size:14px;margin:16px 0 6px;border-bottom:1px solid #ddd;padding-bottom:3px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:5px 7px;border-bottom:1px solid #eee}th{background:#f5f5f5}.s{display:flex;gap:14px;margin:12px 0}.b{background:#f5f5f5;border-radius:8px;padding:10px 14px}.l{font-size:10px;color:#888}.v{font-size:16px;font-weight:700}@media print{button{display:none}}</style></head><body>
+  <h1>Relatório de Vendas</h1><p>Período: ${per.options[per.selectedIndex].text} · ${new Date().toLocaleDateString('it-IT')}</p>
+  <div class="s"><div class="b"><div class="l">Total vendas</div><div class="v">${fe(tv)}</div></div><div class="b"><div class="l">Custo</div><div class="v">${fe(tc)}</div></div><div class="b"><div class="l">Lucro</div><div class="v">${fe(tv-tc)}</div></div></div>
+  <h2>Produtos</h2><table><thead><tr><th>Produto</th><th>Qtd</th><th>Venda</th><th>Custo</th><th>Lucro</th></tr></thead><tbody>${pl.map(([n,v])=>`<tr><td>${n}</td><td>${v.qty}</td><td>${fe(v.v)}</td><td>${fe(v.c)}</td><td>${fe(v.v-v.c)}</td></tr>`).join('')}</tbody></table>
+  <h2>Pedidos</h2><table><thead><tr><th>Data</th><th>Cliente</th><th>Venda</th><th>Lucro</th></tr></thead><tbody>${[...peds].reverse().map(p=>`<tr><td>${fd(p.data)}</td><td>${p.cnome}</td><td>${fe(p.tv)}</td><td>${fe(p.lucro)}</td></tr>`).join('')}</tbody></table>
+  <script>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+function expDRE(){
+  const fil=getFil();const cid=document.getElementById('relcli').value;
+  const peds=db.pedidos.filter(p=>fil(p)&&(!cid||p.cid===cid));
+  const custs=db.custos.filter(c=>fil({data:c.data+'T12:00:00'}));
+  const fpag=db.faturas.filter(f=>f.pago&&fil({data:f.dpag}));
+  const rb=peds.reduce((a,p)=>a+p.tv,0);
+  const tc=peds.reduce((a,p)=>a+p.tc,0);
+  const desc=peds.reduce((a,p)=>{let d=0;p.itens.forEach(it=>{const b=it.qty*it.venda;d+=b*(it.dp/100)+(it.de||0);});d+=p.itens.reduce((s,it)=>s+calcItem(it).sub,0)*(p.dg||0)/100;return a+d;},0);
+  const tiva=peds.reduce((a,p)=>a+(p.iva||0),0);
+  const tbase=peds.reduce((a,p)=>a+(p.base||0),0);
+  const lb=tbase-tc;
+  const cop=custs.filter(c=>c.tipo==='op').reduce((a,c)=>a+c.val,0);
+  const cfx=custs.filter(c=>c.tipo==='fx').reduce((a,c)=>a+c.val,0);
+  const lop=lb-cop-cfx;
+  const tfp=fpag.reduce((a,f)=>a+f.val,0);
+  const res=lop-tfp;
+  const per=document.getElementById('relper');
+  const row=(l,v,t)=>`<div style="display:flex;justify-content:space-between;padding:4px 8px;${t?'font-weight:700;background:#f0f0f0;border-radius:4px;margin:3px 0;':'border-bottom:1px solid #f0f0f0;'}font-size:13px"><span>${l}</span><span style="color:${v>=0?'#060':'#c00'}">${fe(v)}</span></div>`;
+  const sec=l=>`<div style="font-size:10px;color:#888;padding:10px 0 2px;font-weight:700">${l}</div>`;
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>DRE</title><style>body{font-family:sans-serif;padding:24px;font-size:13px}h1{font-size:18px;margin-bottom:4px}@media print{button{display:none}}</style></head><body>
+  <h1>DRE — Demonstrativo de Resultado</h1><p>Período: ${per.options[per.selectedIndex].text} · ${new Date().toLocaleDateString('it-IT')}</p><br>
+  ${sec('RECEITAS')}${row('(+) Receita bruta',rb)}${row('(-) Descontos',-desc)}${row('(-) IVA 22%',-tiva)}${row('(=) Receita líquida',tbase,true)}
+  ${sec('CUSTOS PRODUTOS')}${row('(-) CPV',-tc)}${row('(=) Lucro bruto',lb,true)}
+  ${sec('CUSTOS OPERACIONAIS')}${row('(-) Viagem + Alimentação',-cop)}
+  ${sec('CUSTOS FIXOS')}${row('(-) Aluguel + Contador + Luz + Gás + Água',-cfx)}${row('(=) Lucro operacional',lop,true)}
+  ${sec('OUTRAS SAÍDAS')}${row('(-) Faturas pagas',-tfp)}${row('(=) RESULTADO LÍQUIDO',res,true)}
+  <script>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+/* ===== ESTOQUE ===== */
+function renderEst(){
+  const qi=db.produtos.reduce((a,p)=>a+(+p.estoque||0),0);
+  const vc=db.produtos.reduce((a,p)=>a+(+p.estoque||0)*(+p.custo||0),0);
+  const vv=db.produtos.reduce((a,p)=>a+(+p.estoque||0)*(+p.venda||0),0);
+  document.getElementById('estqtd').textContent=qi;
+  document.getElementById('estcusto').textContent=fe(vc);
+  document.getElementById('estvenda').textContent=fe(vv);
+  document.getElementById('restoque').innerHTML=db.produtos.length?'<div style="overflow-x:auto"><table><thead><tr><th>Produto</th><th style="text-align:center">Quantidade em Estoque</th></tr></thead><tbody>'+
+    db.produtos.map(p=>`<tr><td>${p.nome}</td><td style="text-align:center;font-weight:700;font-size:15px">${+p.estoque||0}</td></tr>`).join('')+
+    `<tr style="font-weight:700;background:#f5f5f5"><td>TOTAL ITENS</td><td style="text-align:center">${qi}</td></tr>`+
+    '</tbody></table></div>':'<p class="empty">Sem produtos.</p>';
+}
+
+function expEstoque(){
+  const qi=db.produtos.reduce((a,p)=>a+(+p.estoque||0),0);
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Estoque</title><style>body{font-family:sans-serif;padding:24px;font-size:13px}h1{font-size:20px;margin-bottom:4px}.sub{color:#888;font-size:12px;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee}th{background:#f5f5f5;font-weight:600}td:last-child{text-align:center;font-weight:700;font-size:15px}.tot{font-weight:700;background:#f0f0f0;font-size:14px}@media print{button{display:none}}</style></head><body>
+  <h1>Relatório de Estoque</h1>
+  <div class="sub">Gerado em: ${new Date().toLocaleDateString('it-IT')} &nbsp;·&nbsp; Total de itens: <b>${qi}</b></div>
+  <table><thead><tr><th>Produto</th><th style="text-align:center;width:160px">Quantidade em Estoque</th></tr></thead><tbody>
+  ${db.produtos.map(p=>`<tr><td>${p.nome}</td><td style="text-align:center">${+p.estoque||0}</td></tr>`).join('')}
+  <tr class="tot"><td>TOTAL ITENS</td><td style="text-align:center">${qi}</td></tr>
+  </tbody></table>
+  <script>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+
+
+/* ===== IMPORTAÇÃO AUTOMÁTICA DE PEDIDOS (PDFs) ===== */
+const IMPORT_FLAG='imported_pdfs_v2';
+const CLIENTES_IMPORT=[
+  {
+    "id": "cli_pdf_01",
+    "nome": "CARISSIMI DI PONTEL CARISSIMI MAIANE",
+    "tel": "",
+    "email": "",
+    "end": "VIA FILLUNGO 150, 55100 LUCCA LU ITALIA"
+  },
+  {
+    "id": "cli_pdf_02",
+    "nome": "ARIETE GROUP SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA VARESINA 162, 20156 MILANO MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_03",
+    "nome": "SCRA-ITAL SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA SCIPIO SLATAPER, 19, 20125 MILANO MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_04",
+    "nome": "BRASA SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA CESARE LOMBROSO 54, 20137 MILANO MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_05",
+    "nome": "EMPORIO GLOBALE SRL",
+    "tel": "",
+    "email": "",
+    "end": "PIAZZA MARTIRI DI VIA FANI 80, 20099 SESTO SAN GIOVANNI MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_06",
+    "nome": "BALADA SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA U. VISCONTI DI MODRONE 2, 20122 MILANO MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_07",
+    "nome": "VARE' 23 SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA GIOVANNI BATTISTA VARE' 23, 20158 MILANO MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_08",
+    "nome": "TOURO SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA MECENATE 99, 20138 MILANO MI ITALIA"
+  },
+  {
+    "id": "cli_pdf_09",
+    "nome": "MONVISO STEAKHOUSE DI CAVASOTTO GIUSEPPE",
+    "tel": "",
+    "email": "",
+    "end": "VIA CAMILLO CAVOUR 49, 13894 GAGLIANICO BI ITALIA"
+  },
+  {
+    "id": "cli_pdf_10",
+    "nome": "B&L INTERNATIONAL SRLS",
+    "tel": "",
+    "email": "",
+    "end": "VIA MILAZZO 57, 00185 ROMA RM ITALIA"
+  },
+  {
+    "id": "cli_pdf_11",
+    "nome": "LA DOLCE VITA TORINO DI BAUER PAPAREL LI MATHEUS",
+    "tel": "",
+    "email": "",
+    "end": "VIA VINCENZO GIOBERTI 28A, 10128 TORINO TO ITALIA"
+  },
+  {
+    "id": "cli_pdf_12",
+    "nome": "BARROS ALBANO JULIO CESAR SAPORI DEL BRASILE",
+    "tel": "",
+    "email": "",
+    "end": "VIA GASPARI SPONTINI 55, 10142 TORINO TO ITALIA"
+  },
+  {
+    "id": "cli_pdf_13",
+    "nome": "PONTO BRASIL DI BELLEI SANDRO",
+    "tel": "",
+    "email": "",
+    "end": "VIA B. MARCELLO 2, 31038 PAESE TV ITALIA"
+  },
+  {
+    "id": "cli_pdf_14",
+    "nome": "BOM BOI SRL",
+    "tel": "",
+    "email": "",
+    "end": "VIA ANTONIANA 175, 35011 CAMPODARSEGO PD ITALIA"
+  },
+  {
+    "id": "cli_pdf_15",
+    "nome": "PIZZERIA BOUNTY DI AZZOLINI MIRCO & C. SAS",
+    "tel": "",
+    "email": "",
+    "end": "VIA OTTELLIO, 1, 37019 PESCHIERA DEL GARDA VR ITALIA"
+  },
+  {
+    "id": "cli_pdf_16",
+    "nome": "RISTORANTE BRASILIANO CHURRASCARIA TUTTO BOM SRLS",
+    "tel": "",
+    "email": "",
+    "end": "VIA DALL'OCA BIANCA 1, 37012 BUSSOLENGO VR ITALIA"
+  },
+  {
+    "id": "cli_pdf_17",
+    "nome": "VENEZIA XXI SNC DI BREVIGLIERI LUCA E GOMES VAGNER STRADA POZZOLENGO 30",
+    "tel": "",
+    "email": "",
+    "end": "46040 PONTI SUL MINCIO MN ITALIA"
+  }
+];
+const PEDIDOS_IMPORT=[
+  {
+    "id": "ped_pdf_001",
+    "cid": "cli_pdf_11",
+    "cnome": "LA DOLCE VITA TORINO DI BAUER PAPAREL LI MATHEUS",
+    "data": "2026-01-02T12:00:00.000Z",
+    "num": "1",
+    "itens": [
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 3.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 12.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 19.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 2.0,
+        "venda": 21.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 2.0,
+        "venda": 26.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 6.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 8.9,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 5,
+    "obs": "Fatura #1 | Sconto primo ordine 5%",
+    "base": 592.8,
+    "iva": 130.42,
+    "tv": 723.22
+  },
+  {
+    "id": "ped_pdf_002",
+    "cid": "cli_pdf_12",
+    "cnome": "BARROS ALBANO JULIO CESAR SAPORI DEL BRASILE",
+    "data": "2026-01-02T12:00:00.000Z",
+    "num": "2",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 1.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 2.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 8.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 26.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 20,
+    "obs": "Fatura #2 | Sconto primo ordine 20%",
+    "base": 73.8,
+    "iva": 16.24,
+    "tv": 90.04
+  },
+  {
+    "id": "ped_pdf_003",
+    "cid": "cli_pdf_09",
+    "cnome": "MONVISO STEAKHOUSE DI CAVASOTTO GIUSEPPE",
+    "data": "2026-01-02T12:00:00.000Z",
+    "num": "3",
+    "itens": [
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 43.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 1.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 1.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 8.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 25,
+    "obs": "Fatura #3 | Sconto primo ordine 25%",
+    "base": 75.52,
+    "iva": 16.61,
+    "tv": 92.13
+  },
+  {
+    "id": "ped_pdf_005",
+    "cid": "cli_pdf_10",
+    "cnome": "B&L INTERNATIONAL SRLS",
+    "data": "2026-01-07T12:00:00.000Z",
+    "num": "5",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 60.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 12.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 24.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 24.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 21.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 1.0,
+        "venda": 56.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 10,
+    "obs": "Fatura #5 | Sconto quantità - 10% VR",
+    "base": 1617.39,
+    "iva": 355.83,
+    "tv": 1973.22
+  },
+  {
+    "id": "ped_pdf_009",
+    "cid": "cli_pdf_17",
+    "cnome": "VENEZIA XXI SNC DI BREVIGLIERI LUCA E GOMES VAGNER STRADA POZZOLENGO 30",
+    "data": "2026-01-14T12:00:00.000Z",
+    "num": "9",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 12.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 5,
+    "obs": "Fatura #9 | Sconto primo ordine - 5%",
+    "base": 153.9,
+    "iva": 33.86,
+    "tv": 187.76
+  },
+  {
+    "id": "ped_pdf_011",
+    "cid": "cli_pdf_01",
+    "cnome": "CARISSIMI DI PONTEL CARISSIMI MAIANE",
+    "data": "2026-01-16T12:00:00.000Z",
+    "num": "11",
+    "itens": [
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 8.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 1.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 13.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 21.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 19.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 26.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI03",
+        "nome": "Liquore al Pistacchio Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 12,
+    "obs": "Fatura #11 | Sconto 12%",
+    "base": 300.21,
+    "iva": 66.05,
+    "tv": 366.26
+  },
+  {
+    "id": "ped_pdf_012",
+    "cid": "cli_pdf_08",
+    "cnome": "TOURO SRL",
+    "data": "2026-01-20T12:00:00.000Z",
+    "num": "12",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 12.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 12.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 5,
+    "obs": "Fatura #12 | Sconto 5% SCADENZA PAGAMENTO: 31/01/2026 VR",
+    "base": 319.2,
+    "iva": 70.22,
+    "tv": 389.42
+  },
+  {
+    "id": "ped_pdf_013",
+    "cid": "cli_pdf_07",
+    "cnome": "VARE' 23 SRL",
+    "data": "2026-01-21T12:00:00.000Z",
+    "num": "13",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 24.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 24.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 43.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 19.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 21.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 6.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 6.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 26.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 5,
+    "obs": "Fatura #13 | Sconto 5% VR",
+    "base": 1340.35,
+    "iva": 294.88,
+    "tv": 1635.23
+  },
+  {
+    "id": "ped_pdf_014",
+    "cid": "cli_pdf_05",
+    "cnome": "EMPORIO GLOBALE SRL",
+    "data": "2026-01-21T12:00:00.000Z",
+    "num": "14",
+    "itens": [
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 8.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI03",
+        "nome": "Liquore al Pistacchio Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 12.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 24.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 5,
+    "obs": "Fatura #14 | Sconto 5% VR",
+    "base": 1284.21,
+    "iva": 282.53,
+    "tv": 1566.74
+  },
+  {
+    "id": "ped_pdf_015",
+    "cid": "cli_pdf_15",
+    "cnome": "PIZZERIA BOUNTY DI AZZOLINI MIRCO & C. SAS",
+    "data": "2026-01-28T12:00:00.000Z",
+    "num": "15",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 8.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 6.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 3,
+    "obs": "Fatura #15 | Sconto 3% VR",
+    "base": 183.33,
+    "iva": 40.33,
+    "tv": 223.66
+  },
+  {
+    "id": "ped_pdf_017",
+    "cid": "cli_pdf_02",
+    "cnome": "ARIETE GROUP SRL",
+    "data": "2026-01-29T12:00:00.000Z",
+    "num": "17",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 36.0,
+        "venda": 13.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 36.0,
+        "venda": 14.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 24.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI03",
+        "nome": "Liquore al Pistacchio Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 8.9,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 21.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 19.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 43.9,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 10,
+    "obs": "Fatura #17 | Sconto 10%",
+    "base": 2189.16,
+    "iva": 481.62,
+    "tv": 2670.78
+  },
+  {
+    "id": "ped_pdf_018",
+    "cid": "cli_pdf_10",
+    "cnome": "B&L INTERNATIONAL SRLS",
+    "data": "2026-02-13T12:00:00.000Z",
+    "num": "18",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 101.0,
+        "venda": 13.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 36.0,
+        "venda": 14.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 2.0,
+        "venda": 21.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 3.0,
+        "venda": 55.0,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 4.0,
+        "venda": 42.0,
+        "dp": 50.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #18",
+    "base": 2183.07,
+    "iva": 480.28,
+    "tv": 2663.35
+  },
+  {
+    "id": "ped_pdf_019",
+    "cid": "cli_pdf_15",
+    "cnome": "PIZZERIA BOUNTY DI AZZOLINI MIRCO & C. SAS",
+    "data": "2026-02-13T12:00:00.000Z",
+    "num": "19",
+    "itens": [
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 2.0,
+        "venda": 12.5,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 8.95,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #19",
+    "base": 33.95,
+    "iva": 7.47,
+    "tv": 41.42
+  },
+  {
+    "id": "ped_pdf_020",
+    "cid": "cli_pdf_15",
+    "cnome": "PIZZERIA BOUNTY DI AZZOLINI MIRCO & C. SAS",
+    "data": "2026-02-17T12:00:00.000Z",
+    "num": "20",
+    "itens": [
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 2.0,
+        "venda": 8.95,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #20",
+    "base": 27.85,
+    "iva": 6.13,
+    "tv": 33.98
+  },
+  {
+    "id": "ped_pdf_021",
+    "cid": "cli_pdf_15",
+    "cnome": "PIZZERIA BOUNTY DI AZZOLINI MIRCO & C. SAS",
+    "data": "2026-03-02T12:00:00.000Z",
+    "num": "21",
+    "itens": [
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 3.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #21",
+    "base": 145.5,
+    "iva": 32.01,
+    "tv": 177.51
+  },
+  {
+    "id": "ped_pdf_023",
+    "cid": "cli_pdf_09",
+    "cnome": "MONVISO STEAKHOUSE DI CAVASOTTO GIUSEPPE",
+    "data": "2026-03-31T12:00:00.000Z",
+    "num": "23",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 48.0,
+        "venda": 13.5,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 42.0,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 9.95,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 2.0,
+        "venda": 12.9,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 8.95,
+        "dp": 5.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #23",
+    "base": 733.88,
+    "iva": 161.45,
+    "tv": 895.33
+  },
+  {
+    "id": "ped_pdf_024",
+    "cid": "cli_pdf_08",
+    "cnome": "TOURO SRL",
+    "data": "2026-03-31T12:00:00.000Z",
+    "num": "24",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 48.0,
+        "venda": 13.5,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 36.0,
+        "venda": 14.5,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 12.0,
+        "venda": 15.5,
+        "dp": 5.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #24",
+    "base": 1288.2,
+    "iva": 283.4,
+    "tv": 1571.6
+  },
+  {
+    "id": "ped_pdf_025",
+    "cid": "cli_pdf_11",
+    "cnome": "LA DOLCE VITA TORINO DI BAUER PAPAREL LI MATHEUS",
+    "data": "2026-03-31T12:00:00.000Z",
+    "num": "25",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 60.0,
+        "venda": 13.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 24.0,
+        "venda": 11.9,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 8.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI03",
+        "nome": "Liquore al Pistacchio Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 6.0,
+        "venda": 12.9,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI08",
+        "nome": "Liquore al Cocco DomTápparo - 1000ml",
+        "qty": 2.0,
+        "venda": 12.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore al Tangerino Dom Tápparo - 1000ml",
+        "qty": 2.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #25",
+    "base": 1655.21,
+    "iva": 364.15,
+    "tv": 2019.36
+  },
+  {
+    "id": "ped_pdf_026",
+    "cid": "cli_pdf_10",
+    "cnome": "B&L INTERNATIONAL SRLS",
+    "data": "2026-04-01T12:00:00.000Z",
+    "num": "26",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 168.0,
+        "venda": 13.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 24.0,
+        "venda": 15.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 21.0,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 6.0,
+        "venda": 55.0,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 24.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore al Tangerino Dom Tápparo - 1000ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI08",
+        "nome": "Liquore al Cocco DomTápparo - 1000ml",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 18.0,
+        "venda": 11.9,
+        "dp": 10.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #26",
+    "base": 3436.56,
+    "iva": 756.04,
+    "tv": 4192.6
+  },
+  {
+    "id": "ped_pdf_027",
+    "cid": "cli_pdf_01",
+    "cnome": "CARISSIMI DI PONTEL CARISSIMI MAIANE",
+    "data": "2026-04-03T12:00:00.000Z",
+    "num": "27",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 48.0,
+        "venda": 13.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 24.0,
+        "venda": 15.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 2.0,
+        "venda": 28.9,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 2.0,
+        "venda": 55.0,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 7.0,
+        "venda": 12.9,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 2.0,
+        "venda": 11.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI08",
+        "nome": "Liquore al Cocco DomTápparo - 1000ml",
+        "qty": 6.0,
+        "venda": 12.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 6.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore al Tangerino Dom Tápparo - 1000ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 7.0,
+        "de": 0
+      },
+      {
+        "code": "A0350BI02",
+        "nome": "Birra Chiara SKOL 4,7% - 350ml",
+        "qty": 72.0,
+        "venda": 1.9,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #27",
+    "base": 1659.53,
+    "iva": 365.1,
+    "tv": 2024.63
+  },
+  {
+    "id": "ped_pdf_028",
+    "cid": "cli_pdf_15",
+    "cnome": "PIZZERIA BOUNTY DI AZZOLINI MIRCO & C. SAS",
+    "data": "2026-04-03T12:00:00.000Z",
+    "num": "28",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 6.0,
+        "venda": 13.5,
+        "dp": 3.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 3.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 5.0,
+        "venda": 11.9,
+        "dp": 3.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI08",
+        "nome": "Liquore al Cocco DomTápparo - 1000ml",
+        "qty": 2.0,
+        "venda": 12.5,
+        "dp": 3.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #28",
+    "base": 276.36,
+    "iva": 60.8,
+    "tv": 337.16
+  },
+  {
+    "id": "ped_pdf_029",
+    "cid": "cli_pdf_16",
+    "cnome": "RISTORANTE BRASILIANO CHURRASCARIA TUTTO BOM SRLS",
+    "data": "2026-04-07T12:00:00.000Z",
+    "num": "29",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 1.0,
+        "venda": 14.5,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 1.0,
+        "venda": 12.9,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 1.0,
+        "venda": 15.5,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 1.0,
+        "venda": 13.5,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 1.0,
+        "venda": 55.0,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO06",
+        "nome": "Cachaça Extra Premium 2 Legni, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 65.0,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 21.0,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 19.5,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 28.9,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 42.0,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore alla Tangerina Dom Tápparo - 1000ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI08",
+        "nome": "Liquore al Cocco DomTápparo - 1000ml",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 1.0,
+        "venda": 11.9,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI03",
+        "nome": "Liquore al Pistacchio Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 9.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 8.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI06",
+        "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 30.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 12.0,
+        "venda": 13.5,
+        "dp": 15.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #29",
+    "base": 427.01,
+    "iva": 93.94,
+    "tv": 520.95
+  },
+  {
+    "id": "ped_pdf_030",
+    "cid": "cli_pdf_05",
+    "cnome": "EMPORIO GLOBALE SRL",
+    "data": "2026-04-07T12:00:00.000Z",
+    "num": "30",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 24.0,
+        "venda": 14.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 24.0,
+        "venda": 13.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 12.0,
+        "venda": 12.9,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 8.95,
+        "dp": 10.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #30",
+    "base": 1055.7,
+    "iva": 232.25,
+    "tv": 1287.95
+  },
+  {
+    "id": "ped_pdf_031",
+    "cid": "cli_pdf_03",
+    "cnome": "SCRA-ITAL SRL",
+    "data": "2026-04-08T12:00:00.000Z",
+    "num": "31",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 24.0,
+        "venda": 13.5,
+        "dp": 15.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #31",
+    "base": 275.4,
+    "iva": 60.59,
+    "tv": 335.99
+  },
+  {
+    "id": "ped_pdf_032",
+    "cid": "cli_pdf_04",
+    "cnome": "BRASA SRL",
+    "data": "2026-04-08T12:00:00.000Z",
+    "num": "32",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 1.0,
+        "venda": 14.5,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 1.0,
+        "venda": 12.9,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 1.0,
+        "venda": 15.5,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 1.0,
+        "venda": 13.5,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 28.9,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 1.0,
+        "venda": 55.0,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO06",
+        "nome": "Cachaça Extra Premium 2 Legni, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 65.0,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 21.0,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 19.5,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 42.0,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore alla Tangerina Dom Tápparo - 1000ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI08",
+        "nome": "Liquore al Cocco DomTápparo - 1000ml",
+        "qty": 1.0,
+        "venda": 12.5,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI01",
+        "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 8.95,
+        "dp": 50.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 24.0,
+        "venda": 13.5,
+        "dp": 15.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #32",
+    "base": 449.95,
+    "iva": 98.99,
+    "tv": 548.94
+  },
+  {
+    "id": "ped_pdf_033",
+    "cid": "cli_pdf_10",
+    "cnome": "B&L INTERNATIONAL SRLS",
+    "data": "2026-04-09T12:00:00.000Z",
+    "num": "33",
+    "itens": [
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 36.0,
+        "venda": 13.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 24.0,
+        "venda": 12.9,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "A0350BI01",
+        "nome": "Birra Chiara ORIGINAL 350ml - 5%",
+        "qty": 120.0,
+        "venda": 2.1,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "A0473BI04",
+        "nome": "Birra Doppio Malto BRAHMA 473ml - 4,7%",
+        "qty": 60.0,
+        "venda": 2.3,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "A0473BI03",
+        "nome": "Birra Chiara BRAHMA 473ml - 4,8%",
+        "qty": 180.0,
+        "venda": 2.3,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "A0350BI02",
+        "nome": "Birra Chiara SKOL 350ml - 4,7%",
+        "qty": 120.0,
+        "venda": 1.9,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #33",
+    "base": 1748.04,
+    "iva": 384.57,
+    "tv": 2132.61
+  },
+  {
+    "id": "ped_pdf_035",
+    "cid": "cli_pdf_13",
+    "cnome": "PONTO BRASIL DI BELLEI SANDRO",
+    "data": "2026-04-10T12:00:00.000Z",
+    "num": "35",
+    "itens": [
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 12.0,
+        "venda": 12.9,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 60.0,
+        "venda": 13.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 36.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 6.0,
+        "venda": 55.0,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore alla Tangerina Dom Tápparo - 1000ml",
+        "qty": 24.0,
+        "venda": 9.95,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 6.0,
+        "venda": 11.9,
+        "dp": 10.0,
+        "de": 0
+      },
+      {
+        "code": "A0350BI01",
+        "nome": "Birra Chiara ORIGINAL 5% - 350ml",
+        "qty": 36.0,
+        "venda": 2.0,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "A0350BI02",
+        "nome": "Birra Chiara SKOL 4,7% - 350ml",
+        "qty": 36.0,
+        "venda": 1.8,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "A0473BI03",
+        "nome": "Birra Chiara BRAHMA 4,8% - 473ml",
+        "qty": 36.0,
+        "venda": 2.2,
+        "dp": 0,
+        "de": 0
+      },
+      {
+        "code": "A0473BI04",
+        "nome": "Birra Doppio Malto BRAHMA 4,7% - 473ml",
+        "qty": 35.0,
+        "venda": 2.2,
+        "dp": 0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #35",
+    "base": 2194.88,
+    "iva": 482.87,
+    "tv": 2677.75
+  },
+  {
+    "id": "ped_pdf_036",
+    "cid": "cli_pdf_06",
+    "cnome": "BALADA SRL",
+    "data": "2026-04-14T12:00:00.000Z",
+    "num": "36",
+    "itens": [
+      {
+        "code": "X1000CA01",
+        "nome": "Cachaça Cabaré Amburana - 1L",
+        "qty": 1.0,
+        "venda": 14.5,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 1.0,
+        "venda": 15.5,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 1.0,
+        "venda": 13.5,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "X0700CA06",
+        "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+        "qty": 1.0,
+        "venda": 55.0,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO06",
+        "nome": "Cachaça Extra Premium 2 Legni, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 65.0,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 21.0,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO02",
+        "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 19.5,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO03",
+        "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 28.9,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO04",
+        "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 42.0,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 1.0,
+        "venda": 11.9,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI02",
+        "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 40.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI04",
+        "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+        "qty": 1.0,
+        "venda": 9.95,
+        "dp": 40.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #36",
+    "base": 184.02,
+    "iva": 40.48,
+    "tv": 224.5
+  },
+  {
+    "id": "ped_pdf_037",
+    "cid": "cli_pdf_14",
+    "cnome": "BOM BOI SRL",
+    "data": "2026-04-16T12:00:00.000Z",
+    "num": "37",
+    "itens": [
+      {
+        "code": "X1000CA02",
+        "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+        "qty": 12.0,
+        "venda": 12.9,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA03",
+        "nome": "Cachaça Cabaré Oro - 1L",
+        "qty": 18.0,
+        "venda": 15.5,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA04",
+        "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+        "qty": 12.0,
+        "venda": 12.5,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "X1000CA05",
+        "nome": "Cachaça Cabaré Argento - 1L",
+        "qty": 18.0,
+        "venda": 13.5,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Y0700DO01",
+        "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+        "qty": 3.0,
+        "venda": 21.0,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Z1000LI07",
+        "nome": "Liquore alla Tangerina Dom Tápparo - 1000ml",
+        "qty": 12.0,
+        "venda": 9.95,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI09",
+        "nome": "Liquore al Jambu DomTápparo - 700ml",
+        "qty": 3.0,
+        "venda": 11.9,
+        "dp": 5.0,
+        "de": 0
+      },
+      {
+        "code": "Z0700LI05",
+        "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+        "qty": 12.0,
+        "venda": 8.95,
+        "dp": 5.0,
+        "de": 0
+      }
+    ],
+    "dg": 0,
+    "obs": "Fatura #37",
+    "base": 1094.69,
+    "iva": 240.83,
+    "tv": 1335.52
+  }
+];
+
+function normNm(s){
+  return (s||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9 ]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+function tokenize(s){
+  return normNm(s).split(' ').filter(t=>t.length>=2);
+}
+function matchProduto(nome){
+  const target=tokenize(nome);
+  const targetSet=new Set(target);
+  if(target.length===0)return null;
+  const nn=normNm(nome).replace(/ /g,'');
+  let p=db.produtos.find(x=>normNm(x.nome).replace(/ /g,'')===nn);
+  if(p)return p;
+  let best=null,bestScore=0,bestStrong=0;
+  db.produtos.forEach(x=>{
+    const xt=tokenize(x.nome);
+    if(!xt.length)return;
+    const xSet=new Set(xt);
+    let inter=0,strong=0;
+    targetSet.forEach(t=>{
+      if(xSet.has(t)){inter++; if(t.length>=5)strong++;}
+    });
+    const uni=new Set([...targetSet,...xSet]).size;
+    const score=uni?inter/uni:0;
+    if(score>bestScore){bestScore=score;best=x;bestStrong=strong;}
+  });
+  if(bestScore>=0.5||bestStrong>=3)return best;
+  return null;
+}
+
+function importarPedidosPDF(){
+  if(localStorage.getItem(IMPORT_FLAG)==='1')return;
+  let addedC=0,addedP=0,skippedP=0;
+  const notFoundProds=new Set();
+
+  CLIENTES_IMPORT.forEach(c=>{
+    const exists=db.clientes.find(x=>x.id===c.id || x.nome===c.nome);
+    if(!exists){
+      db.clientes.push({id:c.id,nome:c.nome,tel:c.tel||'',email:c.email||'',end:c.end||''});
+      addedC++;
+    }
+  });
+
+  PEDIDOS_IMPORT.forEach(ped=>{
+    const exists=db.pedidos.find(x=>x.id===ped.id);
+    if(exists){skippedP++;return;}
+    const cli=db.clientes.find(c=>c.id===ped.cid || c.nome===ped.cnome);
+    if(!cli){skippedP++;return;}
+    const itens=ped.itens.map(it=>{
+      const prod=matchProduto(it.nome);
+      if(!prod)notFoundProds.add(it.nome);
+      return {
+        pid: prod?prod.id:'',
+        nome: prod?prod.nome:it.nome,
+        qty: +it.qty||0,
+        venda: +it.venda||0,
+        custo: prod?(+prod.custo||0):0,
+        dp: +it.dp||0,
+        de: +it.de||0,
+      };
+    });
+    const tc=itens.reduce((a,i)=>a+i.qty*i.custo,0);
+    db.pedidos.push({
+      id:ped.id,cid:cli.id,cnome:cli.nome,data:ped.data,
+      itens,dg:+ped.dg||0,obs:ped.obs||'',
+      base:+ped.base||0,iva:+ped.iva||0,tv:+ped.tv||0,
+      tc,lucro:(+ped.tv||0)-tc,
+    });
+    addedP++;
+  });
+
+  sv();
+  localStorage.setItem(IMPORT_FLAG,'1');
+  let msg=`✅ Importação concluída:\n• ${addedC} cliente(s) adicionado(s)\n• ${addedP} pedido(s) adicionado(s)`;
+  if(skippedP)msg+=`\n• ${skippedP} pedido(s) já existente(s)`;
+  if(notFoundProds.size){
+    msg+=`\n\n⚠️ ${notFoundProds.size} produto(s) não encontrado(s) - lançados com custo 0:`;
+    [...notFoundProds].slice(0,8).forEach(n=>msg+=`\n- ${n}`);
+    if(notFoundProds.size>8)msg+=`\n... e mais ${notFoundProds.size-8}`;
+  }
+  alert(msg);
+  renderAll();
+}
+
+window.reimportarPedidosPDF=function(){
+  if(confirm('Reimportar pedidos dos PDFs? Pedidos já existentes serão mantidos.')){
+    localStorage.removeItem(IMPORT_FLAG);
+    importarPedidosPDF();
+  }
+};
+
+setTimeout(importarPedidosPDF, 300);
+
+/* ===== VÍNCULOS ===== */
+function renderVinculos(){
+  // Encontrar todos os itens dos pedidos que têm pid vazio ou pid que não existe no cadastro
+  const semVinculo={};// nome_no_pedido -> {nome, pids_dos_pedidos:[]}
+  db.pedidos.forEach(p=>{
+    (p.itens||[]).forEach(it=>{
+      const prodExiste=it.pid&&db.produtos.find(x=>x.id===it.pid);
+      if(!prodExiste){
+        if(!semVinculo[it.nome])semVinculo[it.nome]={nome:it.nome,count:0,peds:new Set()};
+        semVinculo[it.nome].count++;
+        semVinculo[it.nome].peds.add(p.id);
+      }
+    });
+  });
+
+  const navBtn=document.getElementById('navVinc');
+  const total=Object.keys(semVinculo).length;
+  if(navBtn)navBtn.style.display=total>0?'inline-block':'none';
+
+  const el=document.getElementById('lvinc');
+  if(!el)return;
+
+  if(!total){
+    el.innerHTML='<p class="empty">✅ Todos os produtos estão vinculados!</p>';
+    return;
+  }
+
+  const opts='<option value="">— Selecione o produto —</option>'+
+    [...db.produtos].sort((a,b)=>a.nome.localeCompare(b.nome)).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+
+  el.innerHTML=Object.values(semVinculo).map((v,i)=>`
+    <div class="item" id="vincrow_${i}">
+      <div style="font-size:12px;color:#888;margin-bottom:4px">
+        📦 Aparece em <b>${v.peds.size}</b> pedido(s) · <b>${v.count}</b> vez(es)
+      </div>
+      <div style="font-weight:600;font-size:13px;margin-bottom:6px;color:#c00">❌ ${v.nome}</div>
+      <div style="font-size:11px;color:#888;margin-bottom:4px">Vincular a:</div>
+      <select data-nome="${v.nome.replace(/"/g,'&quot;')}" style="width:100%;font-size:13px;padding:7px 8px;border-radius:8px;border:1px solid #ddd">
+        ${opts}
+      </select>
+    </div>`).join('');
+}
+
+function salvarVinculos(){
+  const sels=document.querySelectorAll('#lvinc select');
+  let count=0, skip=0;
+  sels.forEach(sel=>{
+    const nomeOriginal=sel.getAttribute('data-nome');
+    const pid=sel.value;
+    if(!pid){skip++;return;}
+    const prod=db.produtos.find(p=>p.id===pid);
+    if(!prod)return;
+    // Atualizar todos os pedidos que têm este nome sem vínculo
+    db.pedidos.forEach(ped=>{
+      (ped.itens||[]).forEach(it=>{
+        const prodExiste=it.pid&&db.produtos.find(x=>x.id===it.pid);
+        if(!prodExiste&&it.nome===nomeOriginal){
+          it.pid=prod.id;
+          it.nome=prod.nome;
+          it.custo=+prod.custo||0;
+          // Recalcular tc e lucro do pedido
+          count++;
+        }
+      });
+      // Recalcular tc e lucro do pedido
+      ped.tc=ped.itens.reduce((a,it)=>a+(+it.qty||0)*(+it.custo||0),0);
+      ped.lucro=(+ped.tv||0)-ped.tc;
+    });
+  });
+  sv();
+  if(skip>0)alert(`✅ ${count} item(s) vinculado(s)!
+⚠️ ${skip} produto(s) não foram selecionados.`);
+  else alert(`✅ ${count} item(s) vinculado(s) com sucesso!`);
+  renderVinculos();
+  renderAll();
+}
+
+/* ===== INIT ===== */
+ld();
+
+// Corrigir "LICORE" → "LIQUORE" em todos os dados salvos
+(function corrigirNomes(){
+  let alterou=false;
+  const fix=s=>(s||'').replace(/LICORE/g,'LIQUORE').replace(/Licore/g,'Liquore').replace(/licore/g,'liquore');
+  db.produtos.forEach(p=>{
+    const novo=fix(p.nome);
+    if(novo!==p.nome){p.nome=novo;alterou=true;}
+  });
+  db.pedidos.forEach(ped=>{
+    (ped.itens||[]).forEach(it=>{
+      const novo=fix(it.nome);
+      if(novo!==it.nome){it.nome=novo;alterou=true;}
+    });
+    const novoNome=fix(ped.cnome);
+    if(novoNome!==ped.cnome){ped.cnome=novoNome;alterou=true;}
+  });
+  if(alterou){sv();console.log('✅ Nomes corrigidos: LICORE → LIQUORE');}
+})();
+
+renderAll();
+setSS('local');
+document.getElementById('custdata').value=tod();
+document.getElementById('fatvenc').value=tod();
+document.getElementById('peddata').value=tod();
+updCustCat();
+</script>
+</body>
+</html>
