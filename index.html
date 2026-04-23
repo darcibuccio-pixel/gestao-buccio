@@ -58,6 +58,9 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     <span class="dot" id="sdot"></span><span id="stxt" style="font-size:11px;color:#888">Local</span>
     <button class="btn btn-sm" onclick="enviarGoogle()">⬆ Enviar</button>
     <button class="btn btn-sm" onclick="baixarGoogle()">⬇ Baixar</button>
+    <button class="btn btn-sm" onclick="exportarDados()" style="background:#e8f5e9;border-color:#4caf50;color:#2e7d32">💾 Exportar</button>
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importarDados(this)">
+    <button class="btn btn-sm" onclick="document.getElementById('importFile').click()" style="background:#e3f2fd;border-color:#2196f3;color:#1565c0">📂 Importar</button>
   </div>
 </header>
 <div id="alertaInativos" style="display:none;background:#fff3cd;border-bottom:2px solid #ffc107;padding:10px 16px;cursor:pointer" onclick="goTab(1)">
@@ -3659,6 +3662,35 @@ function salvarVinculos(){
   renderAll();
 }
 
+/* ===== EXPORTAR / IMPORTAR ===== */
+function exportarDados(){
+  const json=JSON.stringify(db, null, 2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='gestao_buccio_dados.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  alert('✅ Dados exportados!');
+}
+function importarDados(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const dados=JSON.parse(e.target.result);
+      if(!dados.produtos||!dados.clientes||!dados.pedidos)
+        return alert('❌ Arquivo inválido!');
+      db=dados;sv();renderAll();
+      alert('✅ '+dados.produtos.length+' produtos · '+dados.clientes.length+' clientes · '+dados.pedidos.length+' pedidos importados!');
+    }catch(err){alert('❌ Erro: '+err.message);}
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+
 /* ===== INIT ===== */
 ld();
 
@@ -3835,9 +3867,7 @@ ld();
   }
 ];
   seed.forEach(p=>{
-    if(!db.produtos.find(x=>x.id===p.id)){
-      db.produtos.push(p);
-    }
+    if(!db.produtos.find(x=>x.id===p.id))db.produtos.push(p);
   });
   sv();
 })();
