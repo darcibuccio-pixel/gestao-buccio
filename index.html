@@ -1244,7 +1244,7 @@ function expEstoque(){
 
 /* ===== IMPORTAÇÃO AUTOMÁTICA DE PEDIDOS (PDFs) ===== */
 const IMPORT_FLAG='imported_pdfs_v2';
-const CLIENTES_IMPORT=[
+const CLIENTES_IMPORT = [
   {
     "id": "cli_pdf_01",
     "nome": "CARISSIMI DI PONTEL CARISSIMI MAIANE",
@@ -1365,7 +1365,7 @@ const CLIENTES_IMPORT=[
     "end": "46040 PONTI SUL MINCIO MN ITALIA"
   }
 ];
-const PEDIDOS_IMPORT=[
+const PEDIDOS_IMPORT = [
   {
     "id": "ped_pdf_001",
     "cid": "cli_pdf_11",
@@ -3661,6 +3661,186 @@ function salvarVinculos(){
 
 /* ===== INIT ===== */
 ld();
+
+// Pré-popular produtos se ainda não existirem
+(function seedProdutos(){
+  const seed = [
+  {
+    "id": "prod_a0350bi01",
+    "nome": "Birra Chiara ORIGINAL 350ml - 5%",
+    "venda": 2.1,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_a0350bi02",
+    "nome": "Birra Chiara SKOL 4,7% - 350ml",
+    "venda": 1.9,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_a0473bi03",
+    "nome": "Birra Chiara BRAHMA 473ml - 4,8%",
+    "venda": 2.3,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_a0473bi04",
+    "nome": "Birra Doppio Malto BRAHMA 473ml - 4,7%",
+    "venda": 2.3,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_x0700ca06",
+    "nome": "Cachaça Extra Premium 15 Anni Rovere Europeo, Cabaré - 700ml",
+    "venda": 56.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_x1000ca01",
+    "nome": "Cachaça Cabaré Amburana - 1L",
+    "venda": 14.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_x1000ca02",
+    "nome": "Liquore Cabaré FIRE alla Cannella - 1L",
+    "venda": 12.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_x1000ca03",
+    "nome": "Cachaça Cabaré Oro - 1L",
+    "venda": 15.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_x1000ca04",
+    "nome": "Liquore Cabaré ROUGE Bitter - 1L",
+    "venda": 12.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_x1000ca05",
+    "nome": "Cachaça Cabaré Argento - 1L",
+    "venda": 13.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_y0700do01",
+    "nome": "Cachaça Premium 6 Anni Jequitibá, Dom Tápparo - 700ml",
+    "venda": 21.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_y0700do02",
+    "nome": "Cachaça Premium 6 Anni Amburana, Dom Tápparo - 700ml",
+    "venda": 19.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_y0700do03",
+    "nome": "Cachaça Extra Premium 12 Anni Rovere Europeo, Dom Tápparo - 700ml",
+    "venda": 26.5,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_y0700do04",
+    "nome": "Cachaça Extra Premium 10 Anni Rovere Americano, Dom Tápparo - 700ml",
+    "venda": 43.9,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_y0700do06",
+    "nome": "Cachaça Extra Premium 2 Legni, Dom Tápparo - 700ml",
+    "venda": 65.0,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li01",
+    "nome": "Liquore al Cioccolato DomTápparo - 700ml",
+    "venda": 9.95,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li02",
+    "nome": "Liquore alla Paçoca Dom Tápparo - 700ml",
+    "venda": 9.95,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li03",
+    "nome": "Liquore al Pistacchio Dom Tápparo - 700ml",
+    "venda": 9.95,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li04",
+    "nome": "Liquore al Dolce di Latte Dom Tápparo - 700ml",
+    "venda": 9.95,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li05",
+    "nome": "Liquore alla Banana Dom Tápparo - 700ml",
+    "venda": 8.9,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li06",
+    "nome": "Liquore alle Fragole Dondoca Pink Dom Tápparo - 700ml",
+    "venda": 9.95,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z0700li09",
+    "nome": "Liquore al Jambu DomTápparo - 700ml",
+    "venda": 11.9,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z1000li07",
+    "nome": "Liquore al Tangerino Dom Tápparo - 1000ml",
+    "venda": 9.95,
+    "custo": 0,
+    "estoque": 0
+  },
+  {
+    "id": "prod_z1000li08",
+    "nome": "Liquore al Cocco DomTápparo - 1000ml",
+    "venda": 12.5,
+    "custo": 0,
+    "estoque": 0
+  }
+];
+  seed.forEach(p=>{
+    if(!db.produtos.find(x=>x.id===p.id)){
+      db.produtos.push(p);
+    }
+  });
+  sv();
+})();
 
 // Corrigir "LICORE" → "LIQUORE" em todos os dados salvos
 (function corrigirNomes(){
