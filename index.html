@@ -353,7 +353,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
 const SURL='https://script.google.com/macros/s/AKfycbxIxT71zKJVIzzJtMo34vqGPhqYHrRQoWso18aHgov8MYUbaK5XgV6yhYaOVUc2fOdy8g/exec';
 const IVA=0.22;
 const CK='gestao_v3';
-let db={produtos:[],clientes:[],pedidos:[],bonificacoes:[],custos:[],faturas:[]};
+let db={produtos:[],clientes:[],pedidos:[],bonificacoes:[],custos:[],faturas:[],ignoradosInativos:[]};
 let pi=[];// pedido itens
 
 function sv(){try{localStorage.setItem(CK,JSON.stringify(db));}catch(e){}}
@@ -675,11 +675,18 @@ function renderDash(){
   if(elReg)elReg.innerHTML=pizzaSVG(dadosReg,'reg');
 }
 
+function dispensarInativo(cid){
+  if(!db.ignoradosInativos)db.ignoradosInativos=[];
+  if(!db.ignoradosInativos.includes(cid))db.ignoradosInativos.push(cid);
+  sv();renderInativos();
+}
 function renderInativos(){
   const DIAS=60;
   const hoje=new Date();
+  if(!db.ignoradosInativos)db.ignoradosInativos=[];
   const inativos=[];
   db.clientes.forEach(c=>{
+    if(db.ignoradosInativos.includes(c.id))return;
     const peds=db.pedidos.filter(p=>p.cid===c.id);
     if(!peds.length){
       inativos.push({...c,diasSemCompra:null,ultimaCompra:null});
@@ -724,6 +731,7 @@ function renderInativos(){
           </div>
           <div style="display:flex;gap:5px;flex-shrink:0">
             <button class="btn btn-sm btn-s" onclick="novoP('${c.id}')">Novo Pedido</button>
+            <button class="btn btn-sm btn-d" title="Remover desta lista" onclick="dispensarInativo('${c.id}')">×</button>
           </div>
         </div>
       </div>`).join('');
