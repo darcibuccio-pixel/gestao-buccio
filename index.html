@@ -1006,6 +1006,11 @@ function expPedPDF(id){
   <script>window.print()<\/script></body></html>`);
   w.document.close();
 }
+let lPedSort={col:'data',asc:false};
+function sortLPed(col){
+  if(lPedSort.col===col){lPedSort.asc=!lPedSort.asc;}else{lPedSort.col=col;lPedSort.asc=(col==='cnome');}
+  renderLPed();
+}
 function renderLPed(){
   const el=document.getElementById('lped');
   const fc=document.getElementById('filtcli');
@@ -1015,10 +1020,21 @@ function renderLPed(){
   const cid=fc?fc.value:'';
   const de=fde?fde.value:'';
   const at=fat?fat.value:'';
-  let peds=[...db.pedidos].reverse();
+  let peds=[...db.pedidos];
   if(cid)peds=peds.filter(p=>p.cid===cid);
   if(de)peds=peds.filter(p=>p.data&&p.data.slice(0,10)>=de);
   if(at)peds=peds.filter(p=>p.data&&p.data.slice(0,10)<=at);
+  const {col,asc}=lPedSort;
+  peds.sort((a,b)=>{
+    let va,vb;
+    if(col==='data'){va=a.data||'';vb=b.data||'';}
+    else if(col==='cnome'){va=(a.cnome||'').toLowerCase();vb=(b.cnome||'').toLowerCase();}
+    else if(col==='tv'){va=+a.tv||0;vb=+b.tv||0;}
+    else{va=a.data||'';vb=b.data||'';}
+    if(va<vb)return asc?-1:1;
+    if(va>vb)return asc?1:-1;
+    return 0;
+  });
   const total=peds.reduce((a,p)=>a+(+p.tv||0),0);
   const lucro=peds.reduce((a,p)=>a+(+p.lucro||0),0);
   if(info){
@@ -1029,7 +1045,13 @@ function renderLPed(){
     info.textContent=peds.length+' pedido(s) encontrado(s)'+(filtros.length?' · '+filtros.join(' · '):'')+(peds.length?' · Total: '+fe(total)+' · Lucro: '+fe(lucro):'');
   }
   if(!peds.length){el.innerHTML='<p class="empty">Nenhum pedido encontrado.</p>';return;}
-  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Data</th><th>Cliente</th><th>Total</th><th>Lucro</th><th></th></tr></thead><tbody>'+
+  const thS='cursor:pointer;user-select:none;white-space:nowrap;';
+  const arr=(c)=>lPedSort.col===c?(lPedSort.asc?' ▲':' ▼'):'';
+  el.innerHTML='<div style="overflow-x:auto"><table><thead><tr><th>#</th>'+
+    `<th style="${thS}" onclick="sortLPed('data')">Data${arr('data')}</th>`+
+    `<th style="${thS}" onclick="sortLPed('cnome')">Cliente${arr('cnome')}</th>`+
+    `<th style="${thS}" onclick="sortLPed('tv')">Total${arr('tv')}</th>`+
+    '<th>Lucro</th><th></th></tr></thead><tbody>'+
     peds.map(p=>`<tr><td style="color:#aaa;font-size:11px">${p.num||''}</td><td>${fd(p.data)}</td><td>${p.cnome}</td><td>${fe(p.tv)}</td><td>${fe(p.lucro)}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="editPed('${p.id}')">✏️</button> <button class="btn btn-sm" onclick="expPedPDF('${p.id}')">PDF</button> <button class="btn btn-sm btn-d" onclick="delPed('${p.id}')">×</button></td></tr>`).join('')+
     '</tbody></table></div>';
 }
