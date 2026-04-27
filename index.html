@@ -164,8 +164,19 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
       </div>
     </div>
     <label>Observações</label><textarea id="pedobs"></textarea>
+    <div style="margin-top:12px">
+      <label>Forma de Pagamento</label>
+      <select id="pedpagmod" onchange="renderParcelas()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px;margin-bottom:8px">
+        <option value="1">À Vista</option>
+        <option value="2">2x</option>
+        <option value="3">3x</option>
+        <option value="4">4x</option>
+      </select>
+      <div id="pedparcelas"></div>
+    </div>
     <div class="brow">
       <button class="btn btn-p" id="pedsavebtn" onclick="regPedido()">Registrar Pedido</button>
+      <button class="btn" id="pedorcbtn" onclick="regOrcamento()" style="background:#fd7e14;color:#fff">📋 Salvar Orçamento</button>
       <button class="btn" id="pedcancelbtn" style="display:none" onclick="cancelPed()">Cancelar</button>
       <button class="btn" onclick="limparPed()">Limpar</button>
     </div>
@@ -186,6 +197,14 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
       <div style="min-width:110px">
         <label style="margin-top:0">Até</label>
         <input type="date" id="filtat" onchange="renderLPed()" style="font-size:13px">
+      </div>
+      <div style="min-width:120px">
+        <label style="margin-top:0">Tipo</label>
+        <select id="filttipo" onchange="renderLPed()" style="font-size:13px;width:100%">
+          <option value="">Todos</option>
+          <option value="pedido">Pedidos</option>
+          <option value="orcamento">Orçamentos</option>
+        </select>
       </div>
       <div style="display:flex;align-items:flex-end">
         <button class="btn btn-sm" onclick="limparFiltros()" style="white-space:nowrap">✕ Limpar</button>
@@ -234,7 +253,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
 <!-- 5 FATURAS -->
 <div class="tab" id="tab5">
   <div class="card">
-    <h2>Nova Fatura</h2>
+    <h2>Nova Fatura a Pagar</h2>
     <div class="g2">
       <div><label>Fornecedor</label><input type="text" id="fatforn"></div>
       <div><label>Valor (€)</label><input type="number" id="fatval" step="0.01"></div>
@@ -249,8 +268,12 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     <label>Descrição</label><input type="text" id="fatdesc">
     <div class="brow"><button class="btn btn-p" onclick="salvarFat()">Adicionar</button></div>
   </div>
-  <div class="card"><h2>A Pagar</h2><div id="lfatpend"><p class="empty">Nenhuma fatura pendente. ✅</p></div></div>
-  <div class="card"><h2>Pagas</h2><div id="lfatpag"><p class="empty">Nenhuma paga.</p></div></div>
+  <div class="card" style="border:2px solid #28a745">
+    <h2 style="color:#28a745">💰 A Receber</h2>
+    <div id="lfatrec"><p class="empty">Nenhum recebimento pendente.</p></div>
+  </div>
+  <div class="card"><h2>⚠️ A Pagar</h2><div id="lfatpend"><p class="empty">Nenhuma fatura pendente. ✅</p></div></div>
+  <div class="card"><h2>✅ Pagas / Recebidas</h2><div id="lfatpag"><p class="empty">Nenhuma paga.</p></div></div>
 </div>
 
 <!-- 6 RELATÓRIOS -->
@@ -353,11 +376,11 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
 const SURL='https://script.google.com/macros/s/AKfycbxIxT71zKJVIzzJtMo34vqGPhqYHrRQoWso18aHgov8MYUbaK5XgV6yhYaOVUc2fOdy8g/exec';
 const IVA=0.22;
 const CK='gestao_v3';
-let db={produtos:[],clientes:[],pedidos:[],bonificacoes:[],custos:[],faturas:[],ignoradosInativos:[]};
+let db={produtos:[],clientes:[],pedidos:[],bonificacoes:[],custos:[],faturas:[],recebimentos:[],ignoradosInativos:[]};
 let pi=[];// pedido itens
 
 function sv(){try{localStorage.setItem(CK,JSON.stringify(db));}catch(e){}}
-function ld(){try{const s=localStorage.getItem(CK);if(s)db=JSON.parse(s);}catch(e){}}
+function ld(){try{const s=localStorage.getItem(CK);if(s)db=JSON.parse(s);}catch(e){}if(!db.recebimentos)db.recebimentos=[];if(!db.ignoradosInativos)db.ignoradosInativos=[];}
 function fe(v){return'€ '+Number(v||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fd(d){try{return new Date(d).toLocaleDateString('it-IT');}catch(e){return'';}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
@@ -915,6 +938,47 @@ function ajustarEstoque(itens, sinal){
   });
 }
 
+function regOrcamento(){
+  const cid=document.getElementById('pedcli').value;
+  if(!cid)return alert('Selecione um cliente.');
+  if(!pi.length)return alert('Adicione pelo menos um produto.');
+  const cli=db.clientes.find(c=>c.id===cid);
+  let sub=0,tc=0;
+  pi.forEach(it=>{const c=calcItem(it);sub+=c.sub;tc+=c.cost;});
+  const dg=+document.getElementById('peddg').value||0;
+  const base=sub*(1-dg/100);
+  const tipocli=(document.getElementById('pedtipocli')||{}).value||'pj';
+  const semIva=(tipocli==='pf');
+  const iva=semIva?0:base*IVA;
+  const tv=base+iva;
+  const eid=document.getElementById('pedeid').value;
+  const dataVal=document.getElementById('peddata').value;
+  const dataISO=dataVal?(new Date(dataVal+'T12:00:00')).toISOString():new Date().toISOString();
+  const numVal=document.getElementById('pednum').value.trim();
+  const orc={id:eid||uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,tipocli,tipo:'orcamento'};
+  if(eid){
+    const idx=db.pedidos.findIndex(x=>x.id===eid);
+    if(idx>=0)db.pedidos[idx]={...db.pedidos[idx],...orc};
+    else db.pedidos.push(orc);
+  } else {
+    db.pedidos.push(orc);
+  }
+  sv();limparPed();renderLPed();
+  alert('📋 Orçamento salvo!');
+}
+function converterParaPedido(id){
+  const idx=db.pedidos.findIndex(x=>x.id===id);
+  if(idx<0)return;
+  const p=db.pedidos[idx];
+  // carrega o orçamento no formulário para o usuário confirmar/ajustar
+  editPed(id);
+  document.getElementById('pedorcbtn').style.display='none';
+  document.getElementById('pedsavebtn').textContent='✅ Confirmar como Pedido';
+  document.getElementById('pedtit').textContent='Converter Orçamento em Pedido';
+  // marca internamente que está convertendo
+  document.getElementById('pedeid').dataset.convertendo='1';
+}
+
 function regPedido(){
   const cid=document.getElementById('pedcli').value;
   if(!cid)return alert('Selecione um cliente.');
@@ -933,20 +997,45 @@ function regPedido(){
   const dataISO=dataVal?(new Date(dataVal+'T12:00:00')).toISOString():new Date().toISOString();
   const numVal=document.getElementById('pednum').value.trim();
   if(eid){
-    // EDITAR — devolve estoque do pedido antigo, subtrai o novo
+    // EDITAR ou CONVERTER ORÇAMENTO
     const idx=db.pedidos.findIndex(x=>x.id===eid);
     if(idx>=0){
-      ajustarEstoque(db.pedidos[idx].itens, +1); // devolve antigo
-      ajustarEstoque(pi, -1);                     // subtrai novo
-      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,num:numVal||db.pedidos[idx].num||'',tipocli};
+      const eraOrcamento=db.pedidos[idx].tipo==='orcamento';
+      const convertendo=document.getElementById('pedeid').dataset.convertendo==='1';
+      if(!eraOrcamento){
+        ajustarEstoque(db.pedidos[idx].itens, +1); // devolve antigo
+      }
+      ajustarEstoque(pi, -1); // subtrai novo
+      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,num:numVal||db.pedidos[idx].num||'',tipocli,tipo:'pedido'};
+      delete document.getElementById('pedeid').dataset.convertendo;
+      // atualiza recebimentos existentes deste pedido (mantém os já pagos)
+      const parcelas=getParcelas();
+      const pagmod=+document.getElementById('pedpagmod').value||1;
+      db.recebimentos=db.recebimentos.filter(r=>r.pedId!==db.pedidos[idx].id);
+      if(pagmod===1){
+        db.recebimentos.push({id:uid(),pedId:db.pedidos[idx].id,pedNum:numVal||db.pedidos[idx].num||'',cnome:cli?.nome||'',val:tv,venc:dataISO.slice(0,10),pago:false,dpag:null,parcela:null,total:1});
+      } else {
+        const valParc=+(tv/pagmod).toFixed(2);
+        parcelas.forEach((p,i)=>db.recebimentos.push({id:uid(),pedId:db.pedidos[idx].id,pedNum:numVal||db.pedidos[idx].num||'',cnome:cli?.nome||'',val:valParc,venc:p.data,pago:false,dpag:null,parcela:i+1,total:pagmod}));
+      }
     }
-    sv();cancelPed();renderLPed();renderEst();
+    sv();cancelPed();renderLPed();renderEst();renderFat();
     alert('✅ Pedido atualizado!');
   } else {
     // NOVO pedido — subtrai estoque
     ajustarEstoque(pi, -1);
-    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,tipocli};
-    db.pedidos.push(ped);sv();limparPed();renderLPed();renderEst();
+    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,tipocli,tipo:'pedido'};
+    db.pedidos.push(ped);
+    // cria recebimentos
+    const parcelas=getParcelas();
+    const pagmod=+document.getElementById('pedpagmod').value||1;
+    if(pagmod===1){
+      db.recebimentos.push({id:uid(),pedId:ped.id,pedNum:numVal,cnome:cli?.nome||'',val:tv,venc:dataISO.slice(0,10),pago:false,dpag:null,parcela:null,total:1});
+    } else {
+      const valParc=+(tv/pagmod).toFixed(2);
+      parcelas.forEach((p,i)=>db.recebimentos.push({id:uid(),pedId:ped.id,pedNum:numVal,cnome:cli?.nome||'',val:valParc,venc:p.data,pago:false,dpag:null,parcela:i+1,total:pagmod}));
+    }
+    sv();limparPed();renderLPed();renderEst();renderFat();
     alert('✅ Pedido registrado!');
   }
 }
@@ -963,6 +1052,13 @@ function limparPed(){
   document.getElementById('pedtit').textContent='Novo Pedido';
   document.getElementById('pedsavebtn').textContent='Registrar Pedido';
   document.getElementById('pedcancelbtn').style.display='none';
+  document.getElementById('pedpagmod').value='1';
+  pedParcelasCache=[];
+  renderParcelas();
+  document.getElementById('pedorcbtn').style.display='';
+  document.getElementById('pedsavebtn').textContent='Registrar Pedido';
+  const eid=document.getElementById('pedeid');
+  if(eid)delete eid.dataset.convertendo;
   fillPedSels();
 }
 function cancelPed(){
@@ -1032,6 +1128,10 @@ function renderLPed(){
   if(cid)peds=peds.filter(p=>p.cid===cid);
   if(de)peds=peds.filter(p=>p.data&&p.data.slice(0,10)>=de);
   if(at)peds=peds.filter(p=>p.data&&p.data.slice(0,10)<=at);
+  const ft=document.getElementById('filttipo');
+  const ftv=ft?ft.value:'';
+  if(ftv==='pedido')peds=peds.filter(p=>p.tipo!=='orcamento');
+  else if(ftv==='orcamento')peds=peds.filter(p=>p.tipo==='orcamento');
   const {col,asc}=lPedSort;
   peds.sort((a,b)=>{
     let va,vb;
@@ -1060,7 +1160,14 @@ function renderLPed(){
     `<th style="${thS}" onclick="sortLPed('cnome')">Cliente${arr('cnome')}</th>`+
     `<th style="${thS}" onclick="sortLPed('tv')">Total${arr('tv')}</th>`+
     '<th>Lucro</th><th></th></tr></thead><tbody>'+
-    peds.map(p=>`<tr><td style="color:#aaa;font-size:11px">${p.num||''}</td><td>${fd(p.data)}</td><td>${p.cnome}</td><td>${fe(p.tv)}</td><td>${fe(p.lucro)}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="editPed('${p.id}')">✏️</button> <button class="btn btn-sm" onclick="expPedPDF('${p.id}')">PDF</button> <button class="btn btn-sm btn-d" onclick="delPed('${p.id}')">×</button></td></tr>`).join('')+
+    peds.map(p=>{
+      const isOrc=p.tipo==='orcamento';
+      const badge=isOrc?'<span style="background:#fd7e14;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:4px">ORÇAMENTO</span>':'';
+      const btns=isOrc
+        ?`<button class="btn btn-sm" style="background:#fd7e14;color:#fff" onclick="converterParaPedido('${p.id}')">→ Pedido</button> <button class="btn btn-sm" onclick="editPed('${p.id}')">✏️</button> <button class="btn btn-sm btn-d" onclick="delPed('${p.id}')">×</button>`
+        :`<button class="btn btn-sm" onclick="editPed('${p.id}')">✏️</button> <button class="btn btn-sm" onclick="expPedPDF('${p.id}')">PDF</button> <button class="btn btn-sm btn-d" onclick="delPed('${p.id}')">×</button>`;
+      return`<tr style="${isOrc?'background:#fff8f0;':''}"><td style="color:#aaa;font-size:11px">${p.num||''}${badge}</td><td>${fd(p.data)}</td><td>${p.cnome}</td><td>${fe(p.tv)}</td><td>${isOrc?'—':fe(p.lucro)}</td><td style="white-space:nowrap">${btns}</td></tr>`;
+    }).join('')+
     '</tbody></table></div>';
 }
 
@@ -1113,11 +1220,39 @@ function renderCust(){
   document.getElementById('lcustfx').innerHTML=fx.length?[...fx].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.cat} — ${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhum.</p>';
 }
 
+/* ===== PARCELAS DE PEDIDO ===== */
+let pedParcelasCache=[];
+function renderParcelas(){
+  const n=+document.getElementById('pedpagmod').value||1;
+  const hoje=new Date();
+  const el=document.getElementById('pedparcelas');
+  if(n===1){pedParcelasCache=[];el.innerHTML='<p style="font-size:13px;color:#888;margin:4px 0">Pagamento à vista — sem parcelas.</p>';return;}
+  // Preserva datas já editadas se o número de parcelas não mudou
+  if(pedParcelasCache.length!==n){
+    pedParcelasCache=[];
+    for(let i=0;i<n;i++){
+      const d=new Date(hoje);d.setMonth(d.getMonth()+i+1);
+      pedParcelasCache.push({data:d.toISOString().slice(0,10),pago:false});
+    }
+  }
+  el.innerHTML='<div style="font-size:13px;font-weight:600;color:#555;margin-bottom:6px">Datas das parcelas:</div>'+
+    pedParcelasCache.map((p,i)=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:13px;color:#555;white-space:nowrap">Parcela ${i+1}/${n}</span>
+      <input type="date" value="${p.data}" style="padding:6px 8px;border-radius:8px;border:1px solid #ddd;font-size:13px" onchange="pedParcelasCache[${i}].data=this.value">
+    </div>`).join('');
+}
+function getParcelas(){
+  const n=+document.getElementById('pedpagmod').value||1;
+  if(n===1)return[];
+  return pedParcelasCache.map((p,i)=>({idx:i+1,data:p.data,pago:false,dpag:null}));
+}
+
 /* ===== FATURAS ===== */
 function salvarFat(){
   const forn=document.getElementById('fatforn').value.trim();
   const val=+document.getElementById('fatval').value;
   if(!forn||!val)return alert('Informe fornecedor e valor.');
+  if(!db.recebimentos)db.recebimentos=[];
   db.faturas.push({id:uid(),forn,val,venc:document.getElementById('fatvenc').value,cat:document.getElementById('fatcat').value,desc:document.getElementById('fatdesc').value,pago:false,dpag:null});
   sv();renderFat();
   document.getElementById('fatforn').value='';document.getElementById('fatval').value='';document.getElementById('fatdesc').value='';
@@ -1130,20 +1265,94 @@ function delFat(id){
   if(!confirm('Excluir?'))return;
   db.faturas=db.faturas.filter(x=>x.id!==id);sv();renderFat();
 }
-function fatBadge(f){
-  if(f.pago)return'<span class="badge bg">Paga</span>';
+function editFatData(id,campo,val){
+  const f=db.faturas.find(x=>x.id===id);if(!f)return;
+  f[campo]=val;sv();
+}
+function editRecData(id,campo,val){
+  if(!db.recebimentos)return;
+  const r=db.recebimentos.find(x=>x.id===id);if(!r)return;
+  r[campo]=val;sv();
+}
+function pagarRec(id){
+  if(!db.recebimentos)return;
+  const r=db.recebimentos.find(x=>x.id===id);if(!r)return;
+  r.pago=true;r.dpag=new Date().toISOString().slice(0,10);sv();renderFat();
+}
+function delRec(id){
+  if(!confirm('Excluir esta parcela?'))return;
+  db.recebimentos=db.recebimentos.filter(x=>x.id!==id);sv();renderFat();
+}
+function fatBadge(venc,pago){
+  if(pago)return'<span class="badge bg">Pago</span>';
   const h=new Date();h.setHours(0,0,0,0);
-  const v=new Date(f.venc+'T00:00:00');
+  const v=new Date(venc+'T00:00:00');
   const d=Math.ceil((v-h)/86400000);
   if(d<0)return`<span class="badge br">Vencida ${Math.abs(d)}d</span>`;
   if(d<=7)return`<span class="badge by">Vence em ${d}d</span>`;
-  return`<span class="badge bgr">${fd(f.venc)}</span>`;
+  return`<span class="badge bgr">${fd(venc)}</span>`;
 }
 function renderFat(){
+  if(!db.recebimentos)db.recebimentos=[];
+  // A RECEBER
+  const recPend=db.recebimentos.filter(r=>!r.pago).sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  const recPag=db.recebimentos.filter(r=>r.pago).sort((a,b)=>new Date(b.dpag)-new Date(a.dpag));
+  const elRec=document.getElementById('lfatrec');
+  if(elRec){
+    if(!recPend.length){elRec.innerHTML='<p class="empty">Nenhum recebimento pendente.</p>';}
+    else{
+      elRec.innerHTML=recPend.map(r=>`
+        <div class="item">
+          <div class="irow">
+            <div style="flex:1">
+              <div class="iname">${r.cnome}${r.pedNum?' — Fatura #'+r.pedNum:''} ${r.parcela?'('+r.parcela+'/'+r.total+'x)':''}</div>
+              <div class="isub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">
+                <span>€</span>
+                <input type="number" value="${r.val}" step="0.01" style="width:90px;padding:4px 6px;border-radius:6px;border:1px solid #ddd;font-size:13px" onchange="editRecData('${r.id}','val',+this.value);renderFat()" onclick="this.select()">
+                <span>Venc:</span>
+                <input type="date" value="${r.venc}" style="padding:4px 6px;border-radius:6px;border:1px solid #ddd;font-size:13px" onchange="editRecData('${r.id}','venc',this.value)">
+                ${fatBadge(r.venc,false)}
+              </div>
+            </div>
+            <div style="display:flex;gap:5px;flex-shrink:0">
+              <button class="btn btn-sm btn-s" onclick="pagarRec('${r.id}')">✓ Recebido</button>
+              <button class="btn btn-sm btn-d" onclick="delRec('${r.id}')">×</button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+  }
+  // A PAGAR pendente
   const pend=db.faturas.filter(f=>!f.pago).sort((a,b)=>new Date(a.venc)-new Date(b.venc));
   const pag=db.faturas.filter(f=>f.pago).sort((a,b)=>new Date(b.dpag)-new Date(a.dpag));
-  document.getElementById('lfatpend').innerHTML=pend.length?pend.map(f=>`<div class="item"><div class="irow"><div><div class="iname">${f.forn} — ${fe(f.val)}</div><div class="isub">${f.cat}${f.desc?' · '+f.desc:''}</div><div style="margin-top:3px">${fatBadge(f)}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm btn-s" onclick="pagarFat('${f.id}')">✓ Pago</button><button class="btn btn-sm btn-d" onclick="delFat('${f.id}')">×</button></div></div></div>`).join(''):'<p class="empty">Nenhuma pendente. ✅</p>';
-  document.getElementById('lfatpag').innerHTML=pag.length?pag.map(f=>`<div class="item"><div class="irow"><div><div class="iname">${f.forn} — ${fe(f.val)}</div><div class="isub">${f.cat} · Pago em ${fd(f.dpag)}</div></div><button class="btn btn-sm btn-d" onclick="delFat('${f.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhuma paga.</p>';
+  document.getElementById('lfatpend').innerHTML=pend.length?pend.map(f=>`
+    <div class="item"><div class="irow">
+      <div style="flex:1">
+        <div class="iname">${f.forn} — <input type="number" value="${f.val}" step="0.01" style="width:90px;padding:4px 6px;border-radius:6px;border:1px solid #ddd;font-size:13px" onchange="editFatData('${f.id}','val',+this.value)" onclick="this.select()"> €</div>
+        <div class="isub" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">
+          ${f.cat}${f.desc?' · '+f.desc:''} · Venc:
+          <input type="date" value="${f.venc}" style="padding:4px 6px;border-radius:6px;border:1px solid #ddd;font-size:13px" onchange="editFatData('${f.id}','venc',this.value)">
+          ${fatBadge(f.venc,false)}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-shrink:0">
+        <button class="btn btn-sm btn-s" onclick="pagarFat('${f.id}')">✓ Pago</button>
+        <button class="btn btn-sm btn-d" onclick="delFat('${f.id}')">×</button>
+      </div>
+    </div></div>`).join(''):'<p class="empty">Nenhuma pendente. ✅</p>';
+  // PAGAS / RECEBIDAS
+  const todasPagas=[
+    ...recPag.map(r=>({tipo:'rec',id:r.id,nome:r.cnome+(r.pedNum?' #'+r.pedNum:'')+(r.parcela?' ('+r.parcela+'/'+r.total+'x)':''),val:r.val,dpag:r.dpag})),
+    ...pag.map(f=>({tipo:'fat',id:f.id,nome:f.forn+' — '+f.cat,val:f.val,dpag:f.dpag}))
+  ].sort((a,b)=>new Date(b.dpag)-new Date(a.dpag));
+  document.getElementById('lfatpag').innerHTML=todasPagas.length?todasPagas.map(x=>`
+    <div class="item"><div class="irow">
+      <div>
+        <div class="iname">${x.tipo==='rec'?'💰':'💸'} ${x.nome} — ${fe(x.val)}</div>
+        <div class="isub">${x.tipo==='rec'?'Recebido':'Pago'} em ${fd(x.dpag)}</div>
+      </div>
+      <button class="btn btn-sm btn-d" onclick="${x.tipo==='rec'?`delRec('${x.id}')`:`delFat('${x.id}')`}">×</button>
+    </div></div>`).join(''):'<p class="empty">Nenhuma paga/recebida.</p>';
 }
 
 /* ===== RELATÓRIOS ===== */
