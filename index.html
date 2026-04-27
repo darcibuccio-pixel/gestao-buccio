@@ -140,6 +140,12 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
       <div><label>Desc. global (%)</label><input type="number" id="peddg" value="0" min="0" max="100" oninput="calcPed()"></div>
       <div><label>Data do Pedido</label><input type="date" id="peddata"></div>
       <div><label>Nº Fatura/Ref.</label><input type="text" id="pednum" placeholder="Ex: 38"></div>
+      <div><label>Tipo de Cliente</label>
+        <select id="pedtipocli" onchange="calcPed()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px">
+          <option value="pj">Pessoa Jurídica (com IVA 22%)</option>
+          <option value="pf">Pessoa Física (sem IVA)</option>
+        </select>
+      </div>
     </div>
     <label>Adicionar produto</label>
     <select id="pedprod" onchange="addPedItem(this.value)"><option value="">Selecione...</option></select>
@@ -870,12 +876,16 @@ function calcPed(){
   const dg=+document.getElementById('peddg').value||0;
   const dv=sub*(dg/100);
   const base=sub-dv;
-  const iva=base*IVA;
+  const tipocli=(document.getElementById('pedtipocli')||{}).value||'pj';
+  const semIva=(tipocli==='pf');
+  const iva=semIva?0:base*IVA;
   const tv=base+iva;
   document.getElementById('psubt').textContent=fe(sub);
   document.getElementById('pdesc').textContent='- '+fe(dv);
   document.getElementById('pbase').textContent=fe(base);
-  document.getElementById('piva').textContent=fe(iva);
+  const ivaRow=document.getElementById('piva');
+  if(ivaRow) ivaRow.textContent=semIva?'Isento (Pessoa Física)':fe(iva);
+  const totLabel=document.querySelector('[for-ptotv]')||document.getElementById('ptotv').previousElementSibling;
   document.getElementById('ptotv').textContent=fe(tv);
   document.getElementById('ptotc').textContent=fe(tc);
   document.getElementById('ptotl').textContent=fe(tv-tc);
@@ -885,8 +895,8 @@ function calcPed(){
 function renderPedTabela(){
   const el=document.getElementById('peditens');
   if(!pi.length){el.innerHTML='';return;}
-  el.innerHTML='<table><thead><tr><th>Produto</th><th style="min-width:90px">Qtd</th><th style="min-width:90px">Desc%</th><th style="min-width:100px">Desc€</th><th>Sub</th><th></th></tr></thead><tbody>'+
-    pi.map((it,i)=>`<tr><td>${it.nome}</td><td><input type="text" inputmode="decimal" value="${it.qty}" style="width:80px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'qty',this.value)" onclick="this.select()"></td><td><input type="text" inputmode="decimal" value="${it.dp}" style="width:80px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'dp',this.value)" onclick="this.select()"></td><td><input type="text" inputmode="decimal" value="${it.de||0}" style="width:90px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'de',this.value)" onclick="this.select()"></td><td style="font-size:13px">${fe(calcItem(it).sub)}</td><td><button class="btn btn-sm btn-d" onclick="remPI(${i})">×</button></td></tr>`).join('')+
+  el.innerHTML='<table><thead><tr><th>Produto</th><th style="min-width:90px">Qtd</th><th style="min-width:100px">Preço€</th><th style="min-width:90px">Desc%</th><th style="min-width:100px">Desc€</th><th>Sub</th><th></th></tr></thead><tbody>'+
+    pi.map((it,i)=>`<tr><td>${it.nome}</td><td><input type="text" inputmode="decimal" value="${it.qty}" style="width:70px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'qty',this.value)" onclick="this.select()"></td><td><input type="text" inputmode="decimal" value="${it.venda}" style="width:85px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #adf;background:#f0f8ff" onchange="updPI(${i},'venda',this.value)" onclick="this.select()" title="Alterar preço somente neste pedido"></td><td><input type="text" inputmode="decimal" value="${it.dp}" style="width:70px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'dp',this.value)" onclick="this.select()"></td><td><input type="text" inputmode="decimal" value="${it.de||0}" style="width:80px;font-size:16px;padding:7px 8px;text-align:center;border-radius:8px;border:1px solid #ddd" onchange="updPI(${i},'de',this.value)" onclick="this.select()"></td><td style="font-size:13px">${fe(calcItem(it).sub)}</td><td><button class="btn btn-sm btn-d" onclick="remPI(${i})">×</button></td></tr>`).join('')+
     '</tbody></table>';
 }
 function ajustarEstoque(itens, sinal){
@@ -906,7 +916,9 @@ function regPedido(){
   pi.forEach(it=>{const c=calcItem(it);sub+=c.sub;tc+=c.cost;});
   const dg=+document.getElementById('peddg').value||0;
   const base=sub*(1-dg/100);
-  const iva=base*IVA;
+  const tipocli=(document.getElementById('pedtipocli')||{}).value||'pj';
+  const semIva=(tipocli==='pf');
+  const iva=semIva?0:base*IVA;
   const tv=base+iva;
   const eid=document.getElementById('pedeid').value;
   const dataVal=document.getElementById('peddata').value;
@@ -918,14 +930,14 @@ function regPedido(){
     if(idx>=0){
       ajustarEstoque(db.pedidos[idx].itens, +1); // devolve antigo
       ajustarEstoque(pi, -1);                     // subtrai novo
-      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,num:numVal||db.pedidos[idx].num||''};
+      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,num:numVal||db.pedidos[idx].num||'',tipocli};
     }
     sv();cancelPed();renderLPed();renderEst();
     alert('✅ Pedido atualizado!');
   } else {
     // NOVO pedido — subtrai estoque
     ajustarEstoque(pi, -1);
-    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base};
+    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,tipocli};
     db.pedidos.push(ped);sv();limparPed();renderLPed();renderEst();
     alert('✅ Pedido registrado!');
   }
@@ -959,6 +971,7 @@ function editPed(id){
   document.getElementById('pednum').value=p.num||'';
   const d=p.data?p.data.slice(0,10):'';
   document.getElementById('peddata').value=d;
+  if(document.getElementById('pedtipocli')) document.getElementById('pedtipocli').value=p.tipocli||'pj';
   document.getElementById('pedtit').textContent='Editar Pedido #'+(p.num||'');
   document.getElementById('pedsavebtn').textContent='Salvar Alterações';
   document.getElementById('pedcancelbtn').style.display='inline-block';
@@ -986,7 +999,7 @@ function expPedPDF(id){
     <div class="tr"><span>Subtotal s/ IVA</span><span>${fe(p.base/(1-(p.dg||0)/100))}</span></div>
     <div class="tr"><span>Desc. global (${p.dg||0}%)</span><span>- ${fe(p.base/(1-(p.dg||0)/100)*(p.dg||0)/100)}</span></div>
     <div class="tr"><span>Base imponível</span><span>${fe(p.base)}</span></div>
-    <div class="tr"><span>IVA 22%</span><span>${fe(p.iva)}</span></div>
+    <div class="tr"><span>IVA 22%</span><span>${p.tipocli==='pf'?'Isento (P. Física)':fe(p.iva)}</span></div>
     <div class="tr tf"><span>TOTAL</span><span>${fe(p.tv)}</span></div>
   </div>
   ${p.obs?`<div style="clear:both;margin-top:20px;font-size:12px;color:#888">Obs: ${p.obs}</div>`:''}
