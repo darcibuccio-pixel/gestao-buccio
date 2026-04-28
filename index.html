@@ -127,7 +127,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     </div>
     <div id="listaInativos"></div>
   </div>
-  <div class="card"><h2>Clientes</h2><div id="lcli"><p class="empty">Nenhum cliente.</p></div></div>
+  <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h2 style="margin:0">Clientes</h2><button id="btnOrdCli" onclick="toggleOrdCli()" style="background:#f0f0f0;border:1px solid #ddd;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">A→Z ▲</button></div><div id="lcli"><p class="empty">Nenhum cliente.</p></div></div>
 </div>
 
 <!-- 2 PEDIDO -->
@@ -892,10 +892,21 @@ function delCli(id){
   if(!confirm('Excluir cliente?'))return;
   db.clientes=db.clientes.filter(x=>x.id!==id);sv();renderCli();
 }
+let cliOrdAsc=true;
+function toggleOrdCli(){
+  cliOrdAsc=!cliOrdAsc;
+  const btn=document.getElementById('btnOrdCli');
+  if(btn)btn.textContent=cliOrdAsc?'A→Z ▲':'Z→A ▼';
+  renderCli();
+}
 function renderCli(){
   const el=document.getElementById('lcli');
   if(!db.clientes.length){el.innerHTML='<p class="empty">Nenhum cliente.</p>';return;}
-  el.innerHTML=db.clientes.map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.nome}</div><div class="isub">${c.tel||''}${c.email?' · '+c.email:''}${c.end?' · '+c.end:''}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm" onclick="editCli('${c.id}')">Editar</button><button class="btn btn-sm btn-d" onclick="delCli('${c.id}')">×</button></div></div></div>`).join('');
+  const lista=[...db.clientes].sort((a,b)=>{
+    const r=a.nome.localeCompare(b.nome,'pt',{sensitivity:'base'});
+    return cliOrdAsc?r:-r;
+  });
+  el.innerHTML=lista.map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.nome}</div><div class="isub">${c.tel||''}${c.email?' · '+c.email:''}${c.end?' · '+c.end:''}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm" onclick="editCli('${c.id}')">Editar</button><button class="btn btn-sm btn-d" onclick="delCli('${c.id}')">×</button></div></div></div>`).join('');
 }
 
 /* ===== PEDIDO ===== */
