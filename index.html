@@ -160,7 +160,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
       </div>
       <div class="sgrid" style="margin-top:8px">
         <div class="sbox"><div class="slbl">Custo total</div><div class="sval" id="ptotc">€ 0</div></div>
-        <div class="sbox"><div class="slbl">Lucro estimado</div><div class="sval" id="ptotl">€ 0</div></div>
+        <div class="sbox"><div class="slbl">Lucro (s/ IVA)</div><div class="sval" id="ptotl">€ 0</div></div>
       </div>
     </div>
     <label>Observações</label><textarea id="pedobs"></textarea>
@@ -246,8 +246,37 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     <label>Descrição</label><input type="text" id="custdesc">
     <div class="brow"><button class="btn btn-p" onclick="salvarCusto()">Registrar</button></div>
   </div>
-  <div class="card"><h2>Custos Operacionais</h2><div id="lcustop"><p class="empty">Nenhum.</p></div></div>
-  <div class="card"><h2>Custos Fixos</h2><div id="lcustfx"><p class="empty">Nenhum.</p></div></div>
+  <!-- Quadros operacionais -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:14px">
+    <div class="card" style="margin:0;border-top:4px solid #e67e22">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0;color:#e67e22">⛽ Diesel</h2>
+        <span id="tot_diesel" style="font-size:18px;font-weight:700;color:#e67e22">€ 0</span>
+      </div>
+      <div id="lcust_diesel" style="margin-top:10px"><p class="empty">Nenhum.</p></div>
+    </div>
+    <div class="card" style="margin:0;border-top:4px solid #27ae60">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0;color:#27ae60">🍽️ Alimentação</h2>
+        <span id="tot_alim" style="font-size:18px;font-weight:700;color:#27ae60">€ 0</span>
+      </div>
+      <div id="lcust_alim" style="margin-top:10px"><p class="empty">Nenhum.</p></div>
+    </div>
+    <div class="card" style="margin:0;border-top:4px solid #8e44ad">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0;color:#8e44ad">📦 Outros Operacionais</h2>
+        <span id="tot_outros" style="font-size:18px;font-weight:700;color:#8e44ad">€ 0</span>
+      </div>
+      <div id="lcust_outros" style="margin-top:10px"><p class="empty">Nenhum.</p></div>
+    </div>
+  </div>
+  <div class="card" style="border-top:4px solid #2980b9">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 style="margin:0;color:#2980b9">🏢 Custos Fixos</h2>
+      <span id="tot_fixos" style="font-size:18px;font-weight:700;color:#2980b9">€ 0</span>
+    </div>
+    <div id="lcustfx" style="margin-top:10px"><p class="empty">Nenhum.</p></div>
+  </div>
 </div>
 
 <!-- 5 FATURAS -->
@@ -919,7 +948,7 @@ function calcPed(){
   const totLabel=document.querySelector('[for-ptotv]')||document.getElementById('ptotv').previousElementSibling;
   document.getElementById('ptotv').textContent=fe(tv);
   document.getElementById('ptotc').textContent=fe(tc);
-  document.getElementById('ptotl').textContent=fe(tv-tc);
+  document.getElementById('ptotl').textContent=fe(base-tc);
   document.getElementById('pedtot').style.display=pi.length?'block':'none';
   renderPedTabela();
 }
@@ -955,7 +984,7 @@ function regOrcamento(){
   const dataVal=document.getElementById('peddata').value;
   const dataISO=dataVal?(new Date(dataVal+'T12:00:00')).toISOString():new Date().toISOString();
   const numVal=document.getElementById('pednum').value.trim();
-  const orc={id:eid||uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,tipocli,tipo:'orcamento'};
+  const orc={id:eid||uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:base-tc,iva,base,tipocli,tipo:'orcamento'};
   if(eid){
     const idx=db.pedidos.findIndex(x=>x.id===eid);
     if(idx>=0)db.pedidos[idx]={...db.pedidos[idx],...orc};
@@ -1006,7 +1035,7 @@ function regPedido(){
         ajustarEstoque(db.pedidos[idx].itens, +1); // devolve antigo
       }
       ajustarEstoque(pi, -1); // subtrai novo
-      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,num:numVal||db.pedidos[idx].num||'',tipocli,tipo:'pedido'};
+      db.pedidos[idx]={...db.pedidos[idx],cid,cnome:cli?.nome||'',data:dataISO,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:base-tc,iva,base,num:numVal||db.pedidos[idx].num||'',tipocli,tipo:'pedido'};
       delete document.getElementById('pedeid').dataset.convertendo;
       // atualiza recebimentos existentes deste pedido (mantém os já pagos)
       const parcelas=getParcelas();
@@ -1024,7 +1053,7 @@ function regPedido(){
   } else {
     // NOVO pedido — subtrai estoque
     ajustarEstoque(pi, -1);
-    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:tv-tc,iva,base,tipocli,tipo:'pedido'};
+    const ped={id:uid(),cid,cnome:cli?.nome||'',data:dataISO,num:numVal,itens:JSON.parse(JSON.stringify(pi)),dg,obs:document.getElementById('pedobs').value,tv,tc,lucro:base-tc,iva,base,tipocli,tipo:'pedido'};
     db.pedidos.push(ped);
     // cria recebimentos
     const parcelas=getParcelas();
@@ -1219,7 +1248,7 @@ function renderBon(){
 }
 
 /* ===== CUSTOS ===== */
-const CATS={op:['Viagem','Alimentação'],fx:['Aluguel','Contador','Luz','Gás','Água','Outro']};
+const CATS={op:['Diesel','Alimentação','Viagem','Outro'],fx:['Aluguel','Contador','Luz','Gás','Água','Outro']};
 function updCustCat(){
   const t=document.getElementById('custtipo').value;
   document.getElementById('custcat').innerHTML=CATS[t].map(c=>`<option>${c}</option>`).join('');
@@ -1238,8 +1267,22 @@ function delCusto(id){
 function renderCust(){
   const op=db.custos.filter(c=>c.tipo==='op');
   const fx=db.custos.filter(c=>c.tipo==='fx');
-  document.getElementById('lcustop').innerHTML=op.length?[...op].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.cat} — ${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhum.</p>';
-  document.getElementById('lcustfx').innerHTML=fx.length?[...fx].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${c.cat} — ${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join(''):'<p class="empty">Nenhum.</p>';
+  const renderItens=(lista)=>lista.length
+    ?[...lista].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join('')
+    :'<p class="empty">Nenhum.</p>';
+
+  const diesel=op.filter(c=>c.cat==='Diesel');
+  const alim=op.filter(c=>c.cat==='Alimentação');
+  const outros=op.filter(c=>c.cat!=='Diesel'&&c.cat!=='Alimentação');
+
+  document.getElementById('lcust_diesel').innerHTML=renderItens(diesel);
+  document.getElementById('tot_diesel').textContent=fe(diesel.reduce((a,c)=>a+c.val,0));
+  document.getElementById('lcust_alim').innerHTML=renderItens(alim);
+  document.getElementById('tot_alim').textContent=fe(alim.reduce((a,c)=>a+c.val,0));
+  document.getElementById('lcust_outros').innerHTML=renderItens(outros);
+  document.getElementById('tot_outros').textContent=fe(outros.reduce((a,c)=>a+c.val,0));
+  document.getElementById('lcustfx').innerHTML=renderItens(fx);
+  document.getElementById('tot_fixos').textContent=fe(fx.reduce((a,c)=>a+c.val,0));
 }
 
 /* ===== PARCELAS DE PEDIDO ===== */
