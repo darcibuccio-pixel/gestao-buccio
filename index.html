@@ -218,14 +218,42 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
 <!-- 3 BONIFICAÇÕES -->
 <div class="tab" id="tab3">
   <div class="card">
-    <h2>Nova Bonificação</h2>
-    <label>Cliente</label><select id="boncli"><option value="">Selecione...</option></select>
-    <label>Produto</label><select id="bonprod"><option value="">Selecione...</option></select>
-    <label>Quantidade</label><input type="number" id="bonqty" value="1" min="1">
-    <label>Observação</label><input type="text" id="bonobs">
-    <div class="brow"><button class="btn btn-p" onclick="regBon()">Registrar</button></div>
+    <h2 id="bontit">🎁 Nova Bonificação</h2>
+    <input type="hidden" id="boneid">
+    <div class="g2">
+      <div><label>Cliente</label><select id="boncli"><option value="">Selecione...</option></select></div>
+      <div><label>Data</label><input type="date" id="bondata"></div>
+    </div>
+    <label>Observação</label><input type="text" id="bonobs" placeholder="Ex: Degustação, brinde, promoção...">
+    <label style="margin-top:12px">Adicionar produto</label>
+    <select id="bonprodsel" onchange="addBonItem(this.value)" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;background:#fff"><option value="">Selecione um produto...</option></select>
+    <div id="bonitens" style="margin-top:12px"></div>
+    <div id="bontot" style="display:none;margin-top:10px">
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0"><span style="color:#888">Custo total da bonificação</span><span id="boncusttot" style="font-weight:700;color:#c00">€ 0</span></div>
+        <div style="font-size:11px;color:#888;margin-top:4px">⚠️ Será lançado como custo no DRE</div>
+      </div>
+    </div>
+    <div class="brow">
+      <button class="btn btn-p" onclick="regBon()">✅ Registrar Bonificação</button>
+      <button class="btn" id="boncancelbtn" style="display:none" onclick="cancelBon()">Cancelar</button>
+      <button class="btn" onclick="limparBon()">Limpar</button>
+    </div>
   </div>
-  <div class="card"><h2>Histórico</h2><div id="lbon"><p class="empty">Nenhuma bonificação.</p></div></div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <h2 style="margin:0">Histórico de Bonificações</h2>
+      <div id="bontotgeral" style="font-size:12px;color:#c00;font-weight:600"></div>
+    </div>
+    <div class="frow" style="margin-bottom:8px;gap:8px">
+      <select id="bonfiltcli" onchange="renderBon()" style="font-size:13px;flex:1">
+        <option value="">Todos os clientes</option>
+      </select>
+      <input type="date" id="bonfiltde" onchange="renderBon()" style="font-size:13px">
+      <input type="date" id="bonfiltat" onchange="renderBon()" style="font-size:13px">
+    </div>
+    <div id="lbon"><p class="empty">Nenhuma bonificação.</p></div>
+  </div>
 </div>
 
 <!-- 4 CUSTOS -->
@@ -337,6 +365,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
   <div class="card"><h2>DRE</h2><div id="rdre"></div></div>
   <div class="card"><h2>Produtos mais vendidos</h2><div id="rprod"><p class="empty">Sem dados.</p></div></div>
   <div class="card"><h2>Pedidos</h2><div id="rped"><p class="empty">Sem pedidos.</p></div></div>
+  <div class="card"><h2>Bonificações</h2><div id="rbon"><p class="empty">Sem dados.</p></div></div>
   <div class="card"><h2>Por Cliente</h2><div id="rcli"><p class="empty">Sem dados.</p></div></div>
 </div>
 
@@ -429,7 +458,7 @@ function goTab(i){
   document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
   document.querySelectorAll('#nav button').forEach((b,j)=>b.classList.toggle('active',i===j));
   if(i===2){fillPedSels();renderLPed();}
-  if(i===3)fillBonSels();
+  if(i===3){fillBonSels();renderBon();if(!document.getElementById('bondata').value)document.getElementById('bondata').value=tod();}
   if(i===4){document.getElementById('custdata').value=tod();updCustCat();}
   if(i===5)document.getElementById('fatvenc').value=tod();
   if(i===6){fillRelCli();renderRel();}
@@ -1234,28 +1263,118 @@ function renderLPed(){
 }
 
 /* ===== BONIFICAÇÕES ===== */
+let bonItens=[];
 function fillBonSels(){
-  document.getElementById('boncli').innerHTML='<option value="">Selecione...</option>'+db.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  document.getElementById('bonprod').innerHTML='<option value="">Selecione...</option>'+db.produtos.map(p=>`<option value="${p.nome}">${p.nome}</option>`).join('');
+  document.getElementById('boncli').innerHTML='<option value="">Selecione...</option>'+[...db.clientes].sort((a,b)=>a.nome.localeCompare(b.nome,'pt',{sensitivity:'base'})).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('bonprodsel').innerHTML='<option value="">Selecione um produto...</option>'+[...db.produtos].sort((a,b)=>a.nome.localeCompare(b.nome,'pt',{sensitivity:'base'})).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+  document.getElementById('bonfiltcli').innerHTML='<option value="">Todos os clientes</option>'+[...db.clientes].sort((a,b)=>a.nome.localeCompare(b.nome,'pt',{sensitivity:'base'})).map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+}
+function addBonItem(pid){
+  if(!pid)return;
+  const p=db.produtos.find(x=>x.id===pid);
+  if(!p)return;
+  document.getElementById('bonprodsel').value='';
+  const ex=bonItens.find(x=>x.pid===pid);
+  if(ex){ex.qty++;renderBonItens();return;}
+  bonItens.push({pid,nome:p.nome,qty:1,custo:+p.custo||0,venda:+p.venda||0});
+  renderBonItens();
+}
+function renderBonItens(){
+  const el=document.getElementById('bonitens');
+  const tot=document.getElementById('bontot');
+  if(!bonItens.length){el.innerHTML='';if(tot)tot.style.display='none';return;}
+  const totalCusto=bonItens.reduce((a,it)=>a+it.qty*it.custo,0);
+  const totalVenda=bonItens.reduce((a,it)=>a+it.qty*it.venda,0);
+  el.innerHTML='<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr style="background:#f5f5f5"><th style="text-align:left;padding:5px 4px">Produto</th><th style="text-align:center;padding:5px 4px">Qtd</th><th style="text-align:right;padding:5px 4px">Custo un.</th><th style="text-align:right;padding:5px 4px">Custo total</th><th style="text-align:right;padding:5px 4px">Val. venda</th><th></th></tr></thead><tbody>'+
+    bonItens.map((it,i)=>`<tr style="border-bottom:1px solid #f0f0f0">
+      <td style="padding:5px 4px;font-size:11px">${it.nome}</td>
+      <td style="text-align:center;padding:4px"><input type="number" min="1" value="${it.qty}" style="width:52px;padding:3px 5px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center" onchange="bonItens[${i}].qty=+this.value||1;renderBonItens()"></td>
+      <td style="text-align:right;padding:5px 4px;color:#888">${fe(it.custo)}</td>
+      <td style="text-align:right;padding:5px 4px;color:#c00;font-weight:600">${fe(it.qty*it.custo)}</td>
+      <td style="text-align:right;padding:5px 4px;color:#888">${fe(it.qty*it.venda)}</td>
+      <td style="padding:4px"><button class="btn btn-sm btn-d" onclick="bonItens.splice(${i},1);renderBonItens()">×</button></td>
+    </tr>`).join('')+
+    `<tr style="background:#f9f9f9;font-weight:700"><td colspan="3" style="padding:6px 4px">TOTAL</td><td style="text-align:right;padding:6px 4px;color:#c00">${fe(totalCusto)}</td><td style="text-align:right;padding:6px 4px;color:#888">${fe(totalVenda)}</td><td></td></tr>`+
+    '</tbody></table></div>';
+  if(tot){tot.style.display='block';document.getElementById('boncusttot').textContent=fe(totalCusto);}
 }
 function regBon(){
   const cid=document.getElementById('boncli').value;
-  const prod=document.getElementById('bonprod').value;
-  if(!cid||!prod)return alert('Selecione cliente e produto.');
+  if(!cid)return alert('Selecione o cliente.');
+  if(!bonItens.length)return alert('Adicione pelo menos um produto.');
   const cli=db.clientes.find(c=>c.id===cid);
-  db.bonificacoes.push({id:uid(),cid,cnome:cli?.nome||'',produto:prod,qty:+document.getElementById('bonqty').value||1,obs:document.getElementById('bonobs').value,data:new Date().toISOString()});
-  sv();renderBon();
-  document.getElementById('boncli').value='';document.getElementById('bonprod').value='';
-  document.getElementById('bonqty').value=1;document.getElementById('bonobs').value='';
+  const eid=document.getElementById('boneid').value;
+  const data=document.getElementById('bondata').value||new Date().toISOString().slice(0,10);
+  const obs=document.getElementById('bonobs').value;
+  const itens=bonItens.map(it=>({pid:it.pid,nome:it.nome,qty:it.qty,custo:it.custo,venda:it.venda}));
+  const totalCusto=itens.reduce((a,it)=>a+it.qty*it.custo,0);
+  const totalVenda=itens.reduce((a,it)=>a+it.qty*it.venda,0);
+  const bon={id:eid||uid(),cid,cnome:cli?.nome||'',data:data+'T12:00:00.000Z',obs,itens,totalCusto,totalVenda};
+  // compatibilidade retroativa: adiciona campo produto resumido
+  bon.produto=itens.map(it=>`${it.nome} ×${it.qty}`).join(', ');
+  bon.qty=itens.reduce((a,it)=>a+it.qty,0);
+  if(eid){const idx=db.bonificacoes.findIndex(x=>x.id===eid);if(idx>=0)db.bonificacoes[idx]=bon;else db.bonificacoes.push(bon);}
+  else db.bonificacoes.push(bon);
+  sv();renderBon();limparBon();
+  alert('✅ Bonificação registrada! Custo de '+fe(totalCusto)+' lançado no DRE.');
+}
+function limparBon(){
+  bonItens=[];
+  document.getElementById('boncli').value='';
+  document.getElementById('bondata').value=tod();
+  document.getElementById('bonobs').value='';
+  document.getElementById('boneid').value='';
+  document.getElementById('bontit').textContent='🎁 Nova Bonificação';
+  document.getElementById('boncancelbtn').style.display='none';
+  renderBonItens();
+}
+function cancelBon(){limparBon();}
+function editBon(id){
+  const b=db.bonificacoes.find(x=>x.id===id);if(!b)return;
+  document.getElementById('boneid').value=b.id;
+  document.getElementById('boncli').value=b.cid;
+  document.getElementById('bondata').value=(b.data||'').slice(0,10);
+  document.getElementById('bonobs').value=b.obs||'';
+  bonItens=(b.itens||[]).map(it=>({...it}));
+  document.getElementById('bontit').textContent='✏️ Editar Bonificação';
+  document.getElementById('boncancelbtn').style.display='inline-block';
+  renderBonItens();
+  window.scrollTo(0,0);
 }
 function delBon(id){
-  if(!confirm('Excluir?'))return;
+  if(!confirm('Excluir bonificação?'))return;
   db.bonificacoes=db.bonificacoes.filter(x=>x.id!==id);sv();renderBon();
 }
 function renderBon(){
   const el=document.getElementById('lbon');
-  if(!db.bonificacoes.length){el.innerHTML='<p class="empty">Nenhuma bonificação.</p>';return;}
-  el.innerHTML=[...db.bonificacoes].reverse().map(b=>`<div class="item"><div class="irow"><div><div class="iname">${b.cnome}</div><div class="isub">${b.produto} × ${b.qty} · ${fd(b.data)}${b.obs?' · '+b.obs:''}</div></div><button class="btn btn-sm btn-d" onclick="delBon('${b.id}')">×</button></div></div>`).join('');
+  const cid=document.getElementById('bonfiltcli')?document.getElementById('bonfiltcli').value:'';
+  const de=document.getElementById('bonfiltde')?document.getElementById('bonfiltde').value:'';
+  const at=document.getElementById('bonfiltat')?document.getElementById('bonfiltat').value:'';
+  let lista=[...db.bonificacoes];
+  if(cid)lista=lista.filter(b=>b.cid===cid);
+  if(de)lista=lista.filter(b=>(b.data||'').slice(0,10)>=de);
+  if(at)lista=lista.filter(b=>(b.data||'').slice(0,10)<=at);
+  lista.reverse();
+  const totGeral=lista.reduce((a,b)=>a+(+b.totalCusto||0),0);
+  const tg=document.getElementById('bontotgeral');
+  if(tg)tg.textContent=lista.length?`Total bonif.: ${fe(totGeral)}`:'';
+  if(!lista.length){el.innerHTML='<p class="empty">Nenhuma bonificação.</p>';return;}
+  el.innerHTML=lista.map(b=>{
+    const itens=b.itens&&b.itens.length?b.itens:[];
+    const custoTotal=+b.totalCusto||0;
+    const itensHTML=itens.length
+      ?itens.map(it=>`<div style="font-size:11px;color:#666;padding:2px 0 2px 8px">• ${it.nome} × ${it.qty} (custo: ${fe(it.qty*it.custo)})</div>`).join('')
+      :`<div style="font-size:11px;color:#666;padding:2px 0 2px 8px">${b.produto||''}${b.qty?' × '+b.qty:''}</div>`;
+    return`<div class="item"><div class="irow"><div style="flex:1">
+      <div class="iname">🎁 ${b.cnome}</div>
+      <div class="isub">${fd(b.data)}${b.obs?' · '+b.obs:''}</div>
+      ${itensHTML}
+      ${custoTotal>0?`<div style="font-size:12px;font-weight:600;color:#c00;margin-top:3px">Custo total: ${fe(custoTotal)}</div>`:''}
+    </div><div style="display:flex;gap:5px;flex-shrink:0">
+      <button class="btn btn-sm" onclick="editBon('${b.id}')">✏️</button>
+      <button class="btn btn-sm btn-d" onclick="delBon('${b.id}')">×</button>
+    </div></div></div>`;
+  }).join('');
 }
 
 /* ===== CUSTOS ===== */
@@ -1475,7 +1594,10 @@ function renderRel(){
   const lb=tbase-tc;
   const cop=custs.filter(c=>c.tipo==='op').reduce((a,c)=>a+c.val,0);
   const cfx=custs.filter(c=>c.tipo==='fx').reduce((a,c)=>a+c.val,0);
-  const lop=lb-cop-cfx;
+  // Bonificações no período como custo
+  const bonsPer=(db.bonificacoes||[]).filter(b=>fil({data:b.data||b.data}));
+  const tbon=bonsPer.reduce((a,b)=>a+(+b.totalCusto||0),0);
+  const lop=lb-cop-cfx-tbon;
   const tfp=fpag.reduce((a,f)=>a+f.val,0);
   const res=lop-tfp;
   const dr=(l,v,cls,ind)=>`<div class="drow${cls?' '+cls:''}"><span${ind?' style="padding-left:12px"':''}>${l}</span><span class="${v>=0?'dpos':'dneg'}">${fe(v)}</span></div>`;
@@ -1484,6 +1606,7 @@ function renderRel(){
     ds('RECEITAS')+dr('(+) Receita bruta',rb,'',false)+dr('(-) Descontos',-desc,'',true)+dr('(-) IVA 22%',-tiva,'',true)+dr('(=) Receita líquida',tbase,'dtot',false)+
     ds('CUSTOS PRODUTOS')+dr('(-) CPV',-tc,'',false)+dr('(=) Lucro bruto',lb,'dtot',false)+
     ds('CUSTOS OPERACIONAIS')+dr('(-) Viagem + Alimentação',-cop,'',false)+
+    ds('BONIFICAÇÕES')+dr(`(-) Bonificações (${bonsPer.length} lançamento(s))`,-tbon,'',false)+
     ds('CUSTOS FIXOS')+dr('(-) Aluguel + Contador + Luz + Gás + Água',-cfx,'',false)+dr('(=) Lucro operacional',lop,'dtot',false)+
     ds('OUTRAS SAÍDAS')+dr('(-) Faturas pagas',-tfp,'',false)+dr('(=) RESULTADO LÍQUIDO',res,'dtot',false);
   const pm={};
@@ -1494,6 +1617,29 @@ function renderRel(){
   const cm={};peds.forEach(p=>{if(!cm[p.cnome])cm[p.cnome]={v:0,l:0,q:0};cm[p.cnome].v+=p.tv;cm[p.cnome].l+=p.lucro;cm[p.cnome].q++;});
   const cl=Object.entries(cm).sort((a,b)=>b[1].v-a[1].v);
   document.getElementById('rcli').innerHTML=cl.length?'<div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th>Ped.</th><th>Total</th><th>Lucro</th></tr></thead><tbody>'+cl.map(([n,v])=>`<tr><td>${n}</td><td>${v.q}</td><td>${fe(v.v)}</td><td>${fe(v.l)}</td></tr>`).join('')+'</tbody></table></div>':'<p class="empty">Sem dados.</p>';
+  // Relatório de bonificações
+  const rbon=document.getElementById('rbon');
+  if(rbon){
+    if(!bonsPer.length){rbon.innerHTML='<p class="empty">Sem bonificações no período.</p>';}
+    else{
+      const bonCli={};
+      bonsPer.forEach(b=>{
+        if(!bonCli[b.cnome])bonCli[b.cnome]={n:0,custo:0,venda:0,itens:{}};
+        bonCli[b.cnome].n++;
+        bonCli[b.cnome].custo+=(+b.totalCusto||0);
+        bonCli[b.cnome].venda+=(+b.totalVenda||0);
+        (b.itens||[]).forEach(it=>{
+          if(!bonCli[b.cnome].itens[it.nome])bonCli[b.cnome].itens[it.nome]=0;
+          bonCli[b.cnome].itens[it.nome]+=it.qty;
+        });
+      });
+      const totBonCusto=bonsPer.reduce((a,b)=>a+(+b.totalCusto||0),0);
+      rbon.innerHTML=`<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between"><span style="font-weight:600">Total custo bonificações</span><span style="color:#c00;font-weight:700">${fe(totBonCusto)}</span></div>`+
+        '<div style="overflow-x:auto"><table><thead><tr><th>Cliente</th><th style="text-align:center">Qtd</th><th style="text-align:right">Custo</th><th style="text-align:right">Val. venda</th></tr></thead><tbody>'+
+        Object.entries(bonCli).sort((a,b)=>b[1].custo-a[1].custo).map(([nome,v])=>`<tr><td>${nome}<div style="font-size:10px;color:#888">${Object.entries(v.itens).map(([p,q])=>p+' ×'+q).join(', ')}</div></td><td style="text-align:center">${v.n}</td><td style="text-align:right;color:#c00">${fe(v.custo)}</td><td style="text-align:right;color:#888">${fe(v.venda)}</td></tr>`).join('')+
+        '</tbody></table></div>';
+    }
+  }
 }
 
 function expPDF(){
@@ -1526,7 +1672,9 @@ function expDRE(){
   const lb=tbase-tc;
   const cop=custs.filter(c=>c.tipo==='op').reduce((a,c)=>a+c.val,0);
   const cfx=custs.filter(c=>c.tipo==='fx').reduce((a,c)=>a+c.val,0);
-  const lop=lb-cop-cfx;
+  const bonsDRE=(db.bonificacoes||[]).filter(b=>fil({data:b.data||b.data}));
+  const tbon=bonsDRE.reduce((a,b)=>a+(+b.totalCusto||0),0);
+  const lop=lb-cop-cfx-tbon;
   const tfp=fpag.reduce((a,f)=>a+f.val,0);
   const res=lop-tfp;
   const per=document.getElementById('relper');
@@ -1538,6 +1686,7 @@ function expDRE(){
   ${sec('RECEITAS')}${row('(+) Receita bruta',rb)}${row('(-) Descontos',-desc)}${row('(-) IVA 22%',-tiva)}${row('(=) Receita líquida',tbase,true)}
   ${sec('CUSTOS PRODUTOS')}${row('(-) CPV',-tc)}${row('(=) Lucro bruto',lb,true)}
   ${sec('CUSTOS OPERACIONAIS')}${row('(-) Viagem + Alimentação',-cop)}
+  ${sec('BONIFICAÇÕES')}${row(`(-) Bonificações (${bonsDRE.length} lançamento(s))`,-tbon)}
   ${sec('CUSTOS FIXOS')}${row('(-) Aluguel + Contador + Luz + Gás + Água',-cfx)}${row('(=) Lucro operacional',lop,true)}
   ${sec('OUTRAS SAÍDAS')}${row('(-) Faturas pagas',-tfp)}${row('(=) RESULTADO LÍQUIDO',res,true)}
   <script>window.print()<\/script></body></html>`);
@@ -4227,6 +4376,7 @@ setSS('local');
 document.getElementById('custdata').value=tod();
 document.getElementById('fatvenc').value=tod();
 document.getElementById('peddata').value=tod();
+document.getElementById('bondata').value=tod();
 updCustCat();
 </script>
 </body>
