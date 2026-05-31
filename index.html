@@ -732,7 +732,7 @@ function getMesesDados(){
     if(!c.data)return;
     const mes=c.data.slice(0,7);
     if(!mapCust[mes])mapCust[mes]=0;
-    mapCust[mes]+=(+c.valor||0);
+    mapCust[mes]+=(+c.val||0);
   });
 
   // Agrega bonificações como custo
