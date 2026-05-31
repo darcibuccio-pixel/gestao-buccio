@@ -718,8 +718,8 @@ function getMesesDados(){
   const MESES_PT=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   const mapPed={}, mapCust={};
 
-  // Agrega pedidos
-  db.pedidos.filter(p=>p.tipo==='pedido'&&p.data).forEach(p=>{
+  // Agrega pedidos — inclui pedidos sem campo 'tipo' (registros antigos)
+  db.pedidos.filter(p=>(p.tipo==='pedido'||!p.tipo)&&p.data).forEach(p=>{
     const mes=p.data.slice(0,7);
     if(!mapPed[mes])mapPed[mes]={venda:0,custoProd:0,lucroVenda:0};
     mapPed[mes].venda+=(+p.base||0);
@@ -862,7 +862,7 @@ function graficoMensalSVG(meses, labels, map){
 }
 
 function renderDash(){
-  const peds=getDashPeds().filter(p=>p.tipo==='pedido');
+  const peds=getDashPeds().filter(p=>p.tipo==='pedido'||!p.tipo);
 
   // --- GRÁFICO MENSAL PRINCIPAL (sempre todos os meses) ---
   const {meses,labels,map}=getMesesDados();
