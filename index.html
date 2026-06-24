@@ -95,8 +95,13 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     <label>Nome</label><input type="text" id="pnome" placeholder="Nome do produto">
     <div class="g2">
       <div><label>Preço venda (€)</label><input type="number" id="pvenda" step="0.01"></div>
-      <div><label>Preço custo (€)</label><input type="number" id="pcusto" step="0.01"></div>
       <div><label>Estoque (un)</label><input type="number" id="pestoque"></div>
+    </div>
+    <div style="margin-top:12px">
+      <label style="margin:0">Custos por data</label>
+      <div style="font-size:12px;color:#888;margin:2px 0 8px">Cada venda usa automaticamente o custo válido na <b>data do pedido</b>. Ex.: um custo a partir de 01/01/2026 e outro a partir de hoje.</div>
+      <div id="pcustos"></div>
+      <button type="button" class="btn btn-sm" onclick="addCustoLinha()" style="margin-top:6px;background:#eef2ff;border-color:#aab8ff;color:#2540b0">+ Adicionar custo por data</button>
     </div>
     <div class="brow">
       <button class="btn btn-p" onclick="salvarProd()">Salvar</button>
@@ -144,7 +149,7 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     <div class="g2">
       <div><label>Cliente</label><select id="pedcli"><option value="">Selecione...</option></select></div>
       <div><label>Desc. global (%)</label><input type="number" id="peddg" value="0" min="0" max="100" oninput="calcPed()"></div>
-      <div><label>Data do Pedido</label><input type="date" id="peddata"></div>
+      <div><label>Data do Pedido</label><input type="date" id="peddata" onchange="recalcCustosPed()"></div>
       <div><label>Nº Fatura/Ref.</label><input type="text" id="pednum" placeholder="Ex: 38"></div>
       <div><label>Tipo de Cliente</label>
         <select id="pedtipocli" onchange="calcPed()" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px">
@@ -279,6 +284,14 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
     </div>
     <label>Descrição</label><input type="text" id="custdesc">
     <div class="brow"><button class="btn btn-p" onclick="salvarCusto()">Registrar</button></div>
+  </div>
+  <!-- Resumo mensal -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <h2 style="margin:0">📅 Custos por mês</h2>
+      <select id="custmes" onchange="renderCust()" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px;max-width:200px"></select>
+    </div>
+    <div id="custresumomes" style="margin-top:12px"></div>
   </div>
   <!-- Quadros operacionais -->
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:14px">
@@ -450,7 +463,34 @@ let db={produtos:[],clientes:[],pedidos:[],bonificacoes:[],custos:[],faturas:[],
 let pi=[];// pedido itens
 
 function sv(){try{localStorage.setItem(CK,JSON.stringify(db));}catch(e){}}
-function ld(){try{const s=localStorage.getItem(CK);if(s)db=JSON.parse(s);}catch(e){}if(!db.recebimentos)db.recebimentos=[];if(!db.ignoradosInativos)db.ignoradosInativos=[];}
+function ld(){try{const s=localStorage.getItem(CK);if(s)db=JSON.parse(s);}catch(e){}if(!db.recebimentos)db.recebimentos=[];if(!db.ignoradosInativos)db.ignoradosInativos=[];migrarDB();}
+/* Garante que todo produto tenha histórico de custos por data */
+function migrarDB(){
+  (db.produtos||[]).forEach(p=>{
+    if(!Array.isArray(p.custos)||!p.custos.length){
+      p.custos=[{data:'2000-01-01',custo:+p.custo||0}];
+    }
+    // mantém p.custo sincronizado com o custo vigente hoje (compatibilidade com estoque/relatórios)
+    p.custo=custoVigenteArr(p.custos,tod());
+  });
+}
+/* Retorna o custo válido para uma data a partir de um array [{data,custo}] */
+function custoVigenteArr(arr,data){
+  if(!Array.isArray(arr)||!arr.length)return 0;
+  const alvo=(''+(data||tod())).slice(0,10);
+  const ord=[...arr].filter(c=>c&&c.data).sort((a,b)=>a.data<b.data?-1:1);
+  if(!ord.length)return +arr[0].custo||0;
+  let escolhido=null;
+  ord.forEach(c=>{if(c.data<=alvo)escolhido=c;});
+  if(escolhido)return +escolhido.custo||0;
+  return +ord[0].custo||0; // data anterior a todas: usa a faixa mais antiga
+}
+/* Custo de um produto numa data (usa a data do pedido) */
+function custoVigente(p,data){
+  if(!p)return 0;
+  if(Array.isArray(p.custos)&&p.custos.length)return custoVigenteArr(p.custos,data);
+  return +p.custo||0;
+}
 function fe(v){return'€ '+Number(v||0).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fd(d){try{return new Date(d).toLocaleDateString('it-IT');}catch(e){return'';}}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
@@ -1067,23 +1107,46 @@ async function baixarGoogle(){
       const rows=await r.json();
       db[keys[i]]=rows&&rows.length>1?rows.slice(1).map(row=>{try{return JSON.parse(row[0]||'{}');}catch{return{};}}):[]; 
     }
-    sv();setSS('ok');renderAll();alert('✅ Dados baixados do Google Sheets!');
+    migrarDB();sv();setSS('ok');renderAll();alert('✅ Dados baixados do Google Sheets!');
   }catch(e){setSS('err');alert('❌ Erro ao baixar. Verifique a internet.');}
 }
 
 /* ===== PRODUTOS ===== */
+let pcustosArr=[]; // linhas de custo por data do formulário de produto
+function renderPCustos(){
+  const el=document.getElementById('pcustos');
+  if(!el)return;
+  if(!pcustosArr.length){
+    el.innerHTML='<p style="color:#999;font-size:13px;margin:4px 0">Nenhum custo cadastrado. Clique em "+ Adicionar custo por data".</p>';
+    return;
+  }
+  el.innerHTML=pcustosArr.map((c,i)=>`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+      <div style="flex:1"><span style="font-size:11px;color:#888">A partir de</span><input type="date" value="${c.data||''}" onchange="updPCusto(${i},'data',this.value)" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;font-size:14px"></div>
+      <div style="width:120px"><span style="font-size:11px;color:#888">Custo (€)</span><input type="number" step="0.01" placeholder="0,00" value="${c.custo}" onchange="updPCusto(${i},'custo',this.value)" onclick="this.select()" style="width:100%;padding:7px;border-radius:8px;border:1px solid #ddd;font-size:14px"></div>
+      <button type="button" class="btn btn-sm btn-d" onclick="remPCusto(${i})" style="margin-top:14px">×</button>
+    </div>`).join('');
+}
+function addCustoLinha(){pcustosArr.push({data:tod(),custo:0});renderPCustos();}
+function updPCusto(i,f,v){if(f==='custo'){pcustosArr[i].custo=+(''+v).replace(',','.')||0;}else{pcustosArr[i].data=v;}}
+function remPCusto(i){pcustosArr.splice(i,1);renderPCustos();}
+
 function salvarProd(){
   const n=document.getElementById('pnome').value.trim();
   if(!n)return alert('Informe o nome.');
   const id=document.getElementById('peid').value||uid();
-  const p={id,nome:n,venda:+document.getElementById('pvenda').value||0,custo:+document.getElementById('pcusto').value||0,estoque:+document.getElementById('pestoque').value||0};
+  let custos=pcustosArr.filter(c=>c.data).map(c=>({data:c.data,custo:+c.custo||0})).sort((a,b)=>a.data<b.data?-1:1);
+  if(!custos.length)custos=[{data:'2000-01-01',custo:0}];
+  const custoHoje=custoVigenteArr(custos,tod());
+  const p={id,nome:n,venda:+document.getElementById('pvenda').value||0,custo:custoHoje,custos,estoque:+document.getElementById('pestoque').value||0};
   const i=db.produtos.findIndex(x=>x.id===id);
   if(i>=0)db.produtos[i]=p;else db.produtos.push(p);
   sv();renderProd();cancelProd();
 }
 function cancelProd(){
-  ['pnome','pvenda','pcusto','pestoque'].forEach(x=>document.getElementById(x).value='');
+  ['pnome','pvenda','pestoque'].forEach(x=>document.getElementById(x).value='');
   document.getElementById('peid').value='';
+  pcustosArr=[];renderPCustos();
   document.getElementById('ptit').textContent='Novo Produto';
   document.getElementById('pcancelbtn').style.display='none';
 }
@@ -1092,8 +1155,9 @@ function editProd(id){
   document.getElementById('peid').value=p.id;
   document.getElementById('pnome').value=p.nome;
   document.getElementById('pvenda').value=p.venda;
-  document.getElementById('pcusto').value=p.custo;
   document.getElementById('pestoque').value=p.estoque;
+  pcustosArr=(Array.isArray(p.custos)&&p.custos.length)?p.custos.map(c=>({data:c.data,custo:+c.custo||0})):[{data:'2000-01-01',custo:+p.custo||0}];
+  renderPCustos();
   document.getElementById('ptit').textContent='Editar Produto';
   document.getElementById('pcancelbtn').style.display='inline-block';
   window.scrollTo(0,0);
@@ -1105,7 +1169,11 @@ function delProd(id){
 function renderProd(){
   const el=document.getElementById('lprod');
   if(!db.produtos.length){el.innerHTML='<p class="empty">Nenhum produto.</p>';return;}
-  el.innerHTML=db.produtos.map(p=>`<div class="item"><div class="irow"><div><div class="iname">${p.nome}</div><div class="isub">Venda: ${fe(p.venda)} · Custo: ${fe(p.custo)} · Est: ${p.estoque||0}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm" onclick="editProd('${p.id}')">Editar</button><button class="btn btn-sm btn-d" onclick="delProd('${p.id}')">×</button></div></div></div>`).join('');
+  el.innerHTML=db.produtos.map(p=>{
+    const nf=Array.isArray(p.custos)?p.custos.length:1;
+    const cH=custoVigente(p,tod());
+    return `<div class="item"><div class="irow"><div><div class="iname">${p.nome}</div><div class="isub">Venda: ${fe(p.venda)} · Custo atual: ${fe(cH)}${nf>1?` · <span style="color:#2540b0">${nf} faixas de custo</span>`:''} · Est: ${p.estoque||0}</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-sm" onclick="editProd('${p.id}')">Editar</button><button class="btn btn-sm btn-d" onclick="delProd('${p.id}')">×</button></div></div></div>`;
+  }).join('');
 }
 
 function imprimirProdutos(){
@@ -1210,8 +1278,20 @@ function limparFiltros(){
 function addPedItem(id){
   if(!id)return;
   const p=db.produtos.find(x=>x.id===id);if(!p)return;
-  pi.push({pid:id,nome:p.nome,qty:1,venda:p.venda,custo:p.custo,dp:0,de:0});
+  const dataPed=document.getElementById('peddata').value||tod();
+  pi.push({pid:id,nome:p.nome,qty:1,venda:p.venda,custo:custoVigente(p,dataPed),dp:0,de:0});
   calcPed();fillPedSels();
+}
+/* Recalcula o custo dos itens conforme a data do pedido (custo por data) */
+function recalcCustosPed(){
+  const dataPed=document.getElementById('peddata').value||tod();
+  pi.forEach(it=>{
+    if(it.pid){
+      const p=db.produtos.find(x=>x.id===it.pid);
+      if(p)it.custo=custoVigente(p,dataPed);
+    }
+  });
+  calcPed();
 }
 function remPI(i){pi.splice(i,1);calcPed();fillPedSels();}
 function updPI(i,f,v){
@@ -1531,7 +1611,8 @@ function addBonItem(pid){
   document.getElementById('bonprodsel').value='';
   const ex=bonItens.find(x=>x.pid===pid);
   if(ex){ex.qty++;renderBonItens();return;}
-  bonItens.push({pid,nome:p.nome,qty:1,custo:+p.custo||0,venda:+p.venda||0});
+  const bonData=(document.getElementById('bondata')||{}).value||tod();
+  bonItens.push({pid,nome:p.nome,qty:1,custo:custoVigente(p,bonData),venda:+p.venda||0});
   renderBonItens();
 }
 function renderBonItens(){
@@ -1649,9 +1730,42 @@ function delCusto(id){
   if(!confirm('Excluir?'))return;
   db.custos=db.custos.filter(x=>x.id!==id);sv();renderCust();
 }
+const MESES_NOMES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function nomeMes(ym){const[a,m]=(''+ym).split('-');return (MESES_NOMES[+m-1]||ym)+' '+a;}
+function selMesCusto(m){const sel=document.getElementById('custmes');if(sel)sel.value=m;renderCust();}
 function renderCust(){
-  const op=db.custos.filter(c=>c.tipo==='op');
-  const fx=db.custos.filter(c=>c.tipo==='fx');
+  const todos=db.custos||[];
+  // Lista de meses com custo (mais recente primeiro)
+  const meses=[...new Set(todos.filter(c=>c.data).map(c=>(''+c.data).slice(0,7)))].sort().reverse();
+  const sel=document.getElementById('custmes');
+  if(sel){
+    const atual=sel.value;
+    sel.innerHTML='<option value="">Todos os meses</option>'+meses.map(m=>`<option value="${m}">${nomeMes(m)}</option>`).join('');
+    sel.value=(atual&&meses.includes(atual))?atual:'';
+  }
+  const filtroMes=sel?sel.value:'';
+  // Tabela resumo mensal (considera sempre todos os meses)
+  const resumo=document.getElementById('custresumomes');
+  if(resumo){
+    if(!meses.length){resumo.innerHTML='<p class="empty">Nenhum custo lançado.</p>';}
+    else{
+      const linhas=meses.map(m=>{
+        const doMes=todos.filter(c=>c.data&&(''+c.data).slice(0,7)===m);
+        const op=doMes.filter(c=>c.tipo==='op').reduce((a,c)=>a+(+c.val||0),0);
+        const fx=doMes.filter(c=>c.tipo==='fx').reduce((a,c)=>a+(+c.val||0),0);
+        const isSel=(m===filtroMes);
+        return `<tr style="cursor:pointer;${isSel?'background:#fff3cd;font-weight:600':''}" onclick="selMesCusto('${m}')"><td style="padding:7px 8px">${nomeMes(m)}</td><td style="text-align:right;padding:7px 8px">${fe(op)}</td><td style="text-align:right;padding:7px 8px">${fe(fx)}</td><td style="text-align:right;padding:7px 8px;font-weight:700">${fe(op+fx)}</td></tr>`;
+      }).join('');
+      const tOp=todos.filter(c=>c.tipo==='op').reduce((a,c)=>a+(+c.val||0),0);
+      const tFx=todos.filter(c=>c.tipo==='fx').reduce((a,c)=>a+(+c.val||0),0);
+      resumo.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f5f5f5"><th style="text-align:left;padding:7px 8px">Mês</th><th style="text-align:right;padding:7px 8px">Operacional</th><th style="text-align:right;padding:7px 8px">Fixo</th><th style="text-align:right;padding:7px 8px">Total</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr style="border-top:2px solid #ccc;font-weight:700"><td style="padding:7px 8px">TOTAL GERAL</td><td style="text-align:right;padding:7px 8px">${fe(tOp)}</td><td style="text-align:right;padding:7px 8px">${fe(tFx)}</td><td style="text-align:right;padding:7px 8px">${fe(tOp+tFx)}</td></tr></tfoot></table></div>`+
+        (filtroMes?`<p style="font-size:12px;color:#888;margin-top:8px">Mostrando os quadros abaixo apenas de <b>${nomeMes(filtroMes)}</b>. <a href="#" onclick="selMesCusto('');return false" style="color:#2540b0">Ver todos os meses</a></p>`:`<p style="font-size:12px;color:#888;margin-top:8px">Toque em um mês para filtrar os quadros abaixo.</p>`);
+    }
+  }
+  // Aplica o filtro de mês aos quadros por categoria
+  const base=filtroMes?todos.filter(c=>c.data&&(''+c.data).slice(0,7)===filtroMes):todos;
+  const op=base.filter(c=>c.tipo==='op');
+  const fx=base.filter(c=>c.tipo==='fx');
   const renderItens=(lista)=>lista.length
     ?[...lista].reverse().map(c=>`<div class="item"><div class="irow"><div><div class="iname">${fe(c.val)}</div><div class="isub">${fd(c.data)}${c.desc?' · '+c.desc:''}</div></div><button class="btn btn-sm btn-d" onclick="delCusto('${c.id}')">×</button></div></div>`).join('')
     :'<p class="empty">Nenhum.</p>';
@@ -4418,7 +4532,7 @@ function importarDados(input){
       const dados=JSON.parse(e.target.result);
       if(!dados.produtos||!dados.clientes||!dados.pedidos)
         return alert('❌ Arquivo inválido!');
-      db=dados;sv();renderAll();
+      db=dados;if(!db.recebimentos)db.recebimentos=[];if(!db.ignoradosInativos)db.ignoradosInativos=[];migrarDB();sv();renderAll();
       alert('✅ '+dados.produtos.length+' produtos · '+dados.clientes.length+' clientes · '+dados.pedidos.length+' pedidos importados!');
     }catch(err){alert('❌ Erro: '+err.message);}
     input.value='';
@@ -4633,6 +4747,7 @@ document.getElementById('fatvenc').value=tod();
 document.getElementById('peddata').value=tod();
 document.getElementById('bondata').value=tod();
 updCustCat();
+renderPCustos();
 </script>
 </body>
 </html>
