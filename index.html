@@ -289,7 +289,15 @@ td{padding:6px 4px;border-bottom:1px solid #f5f5f5;vertical-align:middle}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <h2 style="margin:0">📅 Custos por mês</h2>
-      <select id="custmes" onchange="renderCust()" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px;max-width:200px"></select>
+      <select id="custmes" onchange="filtroMesCusto()" style="padding:8px;border-radius:8px;border:1px solid #ddd;font-size:14px;max-width:200px"></select>
+    </div>
+    <div style="margin-top:12px;padding:10px;background:#f7f7f9;border-radius:10px">
+      <div style="font-size:12px;color:#666;margin-bottom:6px;font-weight:600">Filtrar por intervalo de datas (Diesel, Alimentação, Outros e Fixos)</div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div><span style="font-size:11px;color:#888">De</span><input type="date" id="custde" onchange="renderCust()" style="display:block;padding:7px;border-radius:8px;border:1px solid #ddd;font-size:14px"></div>
+        <div><span style="font-size:11px;color:#888">Até</span><input type="date" id="custate" onchange="renderCust()" style="display:block;padding:7px;border-radius:8px;border:1px solid #ddd;font-size:14px"></div>
+        <button type="button" class="btn btn-sm" onclick="limparFiltroCusto()" style="background:#eee">Limpar filtros</button>
+      </div>
     </div>
     <div id="custresumomes" style="margin-top:12px"></div>
   </div>
@@ -1732,7 +1740,9 @@ function delCusto(id){
 }
 const MESES_NOMES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 function nomeMes(ym){const[a,m]=(''+ym).split('-');return (MESES_NOMES[+m-1]||ym)+' '+a;}
-function selMesCusto(m){const sel=document.getElementById('custmes');if(sel)sel.value=m;renderCust();}
+function selMesCusto(m){const sel=document.getElementById('custmes');if(sel)sel.value=m;const de=document.getElementById('custde');const at=document.getElementById('custate');if(de)de.value='';if(at)at.value='';renderCust();}
+function filtroMesCusto(){const de=document.getElementById('custde');const at=document.getElementById('custate');if(de)de.value='';if(at)at.value='';renderCust();}
+function limparFiltroCusto(){const sel=document.getElementById('custmes');if(sel)sel.value='';const de=document.getElementById('custde');const at=document.getElementById('custate');if(de)de.value='';if(at)at.value='';renderCust();}
 function renderCust(){
   const todos=db.custos||[];
   // Lista de meses com custo (mais recente primeiro)
@@ -1758,12 +1768,32 @@ function renderCust(){
       }).join('');
       const tOp=todos.filter(c=>c.tipo==='op').reduce((a,c)=>a+(+c.val||0),0);
       const tFx=todos.filter(c=>c.tipo==='fx').reduce((a,c)=>a+(+c.val||0),0);
-      resumo.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f5f5f5"><th style="text-align:left;padding:7px 8px">Mês</th><th style="text-align:right;padding:7px 8px">Operacional</th><th style="text-align:right;padding:7px 8px">Fixo</th><th style="text-align:right;padding:7px 8px">Total</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr style="border-top:2px solid #ccc;font-weight:700"><td style="padding:7px 8px">TOTAL GERAL</td><td style="text-align:right;padding:7px 8px">${fe(tOp)}</td><td style="text-align:right;padding:7px 8px">${fe(tFx)}</td><td style="text-align:right;padding:7px 8px">${fe(tOp+tFx)}</td></tr></tfoot></table></div>`+
-        (filtroMes?`<p style="font-size:12px;color:#888;margin-top:8px">Mostrando os quadros abaixo apenas de <b>${nomeMes(filtroMes)}</b>. <a href="#" onclick="selMesCusto('');return false" style="color:#2540b0">Ver todos os meses</a></p>`:`<p style="font-size:12px;color:#888;margin-top:8px">Toque em um mês para filtrar os quadros abaixo.</p>`);
+      resumo.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:#f5f5f5"><th style="text-align:left;padding:7px 8px">Mês</th><th style="text-align:right;padding:7px 8px">Operacional</th><th style="text-align:right;padding:7px 8px">Fixo</th><th style="text-align:right;padding:7px 8px">Total</th></tr></thead><tbody>${linhas}</tbody><tfoot><tr style="border-top:2px solid #ccc;font-weight:700"><td style="padding:7px 8px">TOTAL GERAL</td><td style="text-align:right;padding:7px 8px">${fe(tOp)}</td><td style="text-align:right;padding:7px 8px">${fe(tFx)}</td><td style="text-align:right;padding:7px 8px">${fe(tOp+tFx)}</td></tr></tfoot></table></div><p id="custfiltroinfo" style="font-size:12px;color:#888;margin-top:8px"></p>`;
     }
   }
-  // Aplica o filtro de mês aos quadros por categoria
-  const base=filtroMes?todos.filter(c=>c.data&&(''+c.data).slice(0,7)===filtroMes):todos;
+  // Lê o intervalo de datas (De/Até)
+  const de=(document.getElementById('custde')||{}).value||'';
+  const at=(document.getElementById('custate')||{}).value||'';
+  // Aplica filtros aos quadros por categoria: mês E/OU intervalo de datas
+  let base=todos.slice();
+  if(filtroMes) base=base.filter(c=>c.data&&(''+c.data).slice(0,7)===filtroMes);
+  if(de) base=base.filter(c=>c.data&&(''+c.data).slice(0,10)>=de);
+  if(at) base=base.filter(c=>c.data&&(''+c.data).slice(0,10)<=at);
+  // Atualiza o texto informativo do resumo conforme o filtro ativo
+  const infoEl=document.getElementById('custfiltroinfo');
+  if(infoEl){
+    let txt='';
+    if(de||at){
+      const ini=de?fd(de):'início';
+      const fim=at?fd(at):'hoje';
+      txt=`Quadros filtrados por data: <b>${ini}</b> até <b>${fim}</b>. <a href="#" onclick="limparFiltroCusto();return false" style="color:#2540b0">Limpar</a>`;
+    }else if(filtroMes){
+      txt=`Mostrando os quadros abaixo apenas de <b>${nomeMes(filtroMes)}</b>. <a href="#" onclick="limparFiltroCusto();return false" style="color:#2540b0">Ver todos</a>`;
+    }else{
+      txt='Toque em um mês acima ou use o intervalo de datas para filtrar os quadros abaixo.';
+    }
+    infoEl.innerHTML=txt;
+  }
   const op=base.filter(c=>c.tipo==='op');
   const fx=base.filter(c=>c.tipo==='fx');
   const renderItens=(lista)=>lista.length
